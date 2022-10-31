@@ -79,11 +79,6 @@ public class Servidor {
             public void run() {
                 try {
                     InputStreamReader is = new InputStreamReader(node.getInputStream());
-                    BufferedReader reader = new BufferedReader(is);
-
-                    reader.
-                    OutputStream os = node.getOutputStream();
-                    DataOutputStream writer = new DataOutputStream(os);
 
                 } catch (IOException e) {
                     // TODO Auto-generated catch block
