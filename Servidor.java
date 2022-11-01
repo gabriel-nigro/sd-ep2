@@ -7,6 +7,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
+// Lib para tabela de Hash
+import java.util.HashMap;
 // Lib para validar input do usuário
 import java.util.regex.Pattern;
 // Lib para exceptions
@@ -107,7 +109,7 @@ public class Servidor {
 
         // Servidor vizinho[1]
         System.out.println("\nInforme o IP:PORTA do segundo vizinho.");
-        vizinhos[0] = getInputInfos(); 
+        vizinhos[1] = getInputInfos(); 
 
         // Servidor vizinho[1]
         System.out.println("\nInforme o IP:PORTA do líder.");

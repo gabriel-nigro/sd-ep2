@@ -92,7 +92,9 @@ public class Peer {
      * informado.
      * 
      * @param nomeDiretorio
+     * 
      * @param nomeArquivo
+     * 
      * @return boolean O valor booleano referente a existência do arquivo.
      */
     public static boolean verificaArquivo(String nomeDiretorio, String nomeArquivo) {
@@ -179,6 +181,7 @@ public class Peer {
      * reprocessamento.
      * Vale ressaltar que a inicialização utiliza-se do sistema de Threads.
      * Funcionalidade: 4.a)
+     * 
      * @param port Valor inteiro para criação do socket na porta informada
      * 
      * @param nomeDiretorio
@@ -256,12 +259,14 @@ public class Peer {
                             String arquivo = msg.getNomeArquivo();
                             // Verifica se o arquivo existe no diretório informado na inicialização
                             // Caso exista, o mesmo é enviado para o peer solicitante
-                            // Funcionalidade: 4.e) responde diretamente a quem inicialmente realizou o search
+                            // Funcionalidade: 4.e) responde diretamente a quem inicialmente realizou o
+                            // search
                             if (verificaArquivo(nomeDiretorio, arquivo)) {
                                 msg.setConteudoArquivo(getArquivo(nomeDiretorio, arquivo));
                                 msg.setIsResponse(true);
                                 msg.setPeerResponse(serverInfos);
-                                System.out.println("Tenho o arquivo " + msg.getNomeArquivo() + ". Encaminhando para " + msg.getSenderInfos());
+                                System.out.println("Tenho o arquivo " + msg.getNomeArquivo() + ". Encaminhando para "
+                                        + msg.getSenderInfos());
                                 String ipDestino = getIp(msg.getSenderInfos());
                                 int portaDestino = getPorta(msg.getSenderInfos());
                                 enviaMensagem(clientSocket, msg, ipDestino, portaDestino);
@@ -327,11 +332,15 @@ public class Peer {
      * O método é responsável por relizar o envio de mensagens aos peers
      * 
      * @param clientSocket Socket para encaminhamento de mensagem para outros peers
+     * 
      * @param mensagem
+     * 
      * @param ipDestino IP para qual será realizado o envio da mensagem
+     * 
      * @param portaDestino Porta para qual será realizado o envio da mensagem
      */
-    public static void enviaMensagem(DatagramSocket clientSocket, Mensagem mensagem, String ipDestino, int portaDestino) {
+    public static void enviaMensagem(DatagramSocket clientSocket, Mensagem mensagem, String ipDestino,
+            int portaDestino) {
         (new Thread() {
             @Override
             public void run() {
@@ -355,12 +364,16 @@ public class Peer {
 
         }).start();
     }
-  
+
     /*
-     * O método é responsável por relizar o print periódico dos arquivos presentes no peer. Para isso, utiliza-se a função Thread.sleep e em sequência a lógica de verificação de arquivos.
+     * O método é responsável por relizar o print periódico dos arquivos presentes
+     * no peer. Para isso, utiliza-se a função Thread.sleep e em sequência a lógica
+     * de verificação de arquivos.
      * Funcionalidade: 4.c)
+     * 
      * @param peerInfos informações do servidor no formato IPV4:PORTA
-     * @param nomeDiretorio 
+     * 
+     * @param nomeDiretorio
      */
     static void periodicPrint(String peerInfos, String nomeDiretorio) {
         (new Thread() {
@@ -414,7 +427,8 @@ public class Peer {
         // Cria o clientSocket
         DatagramSocket clientSocket = new DatagramSocket();
 
-        // loop infinito para manter o funcionamento das ações enquanto a aplicação estiver rodando
+        // loop infinito para manter o funcionamento das ações enquanto a aplicação
+        // estiver rodando
         while (true) {
             System.out.println("\nMenu de acoes.");
             System.out.println("Digite uma opção:");
@@ -472,7 +486,7 @@ public class Peer {
                 }
                 case 2: {
                     // Funcionalidade: 4.d)
-                  
+
                     // Verifica se o servidor já foi inicializado
                     if (!isInitialized) {
                         System.out
@@ -492,7 +506,7 @@ public class Peer {
                             break;
                         }
                     }
-                    
+
                     // Verifica se o arquivo já existe
                     if (verificaArquivo(nomeDiretorio, arquivoBuscado)) {
                         System.out.println("O peer já possui o arquivo.");
