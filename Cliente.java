@@ -114,9 +114,6 @@ public class Cliente {
     }
 
     public static void put(String servidor, Mensagem mensagem) {
-        (new Thread() {
-            @Override
-            public void run() {
                 String ip = getIp(servidor);
                 int porta = getPorta(servidor);
                 try {
@@ -137,9 +134,6 @@ public class Cliente {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
-            }
-
-        }).start();
     }
 
     public static void main(String[] args) throws Exception {

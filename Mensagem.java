@@ -11,6 +11,7 @@ public class Mensagem implements Serializable {
     private String propriedade;
     private String valor;
     private Date timestamp;
+    private String response;
 
 
     public Mensagem(String propriedade, String valor, boolean isPut, boolean isGet) {
@@ -41,12 +42,20 @@ public class Mensagem implements Serializable {
         return this.timestamp;
     }
 
+    public String getResponse() {
+        return this.response;
+    }
+
     public void setPropriedade(String propriedade) {
         this.propriedade = propriedade;
     }
 
     public void setValor(String valor) {
         this.valor = valor;
+    }
+
+    public void setResponse(String response) {
+        this.response = response;
     }
 
 }
