@@ -128,6 +128,27 @@ public class Servidor {
         }).start();
     }
 
+    public static void enviaMensagemSincrona(Socket socket, Mensagem mensagem) {
+                try {
+                    // Cria a cadeia de saída (escrita) de informações do socket
+                    OutputStream os = socket.getOutputStream();
+                    DataOutputStream writer = new DataOutputStream(os);
+
+                    // declaração e preenchimento do buffer de envio
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream(6400);
+                    ObjectOutputStream oos = new ObjectOutputStream(baos);
+                    oos.writeObject(mensagem);
+                    final byte[] sendMessage = baos.toByteArray();
+
+                    // Envia mensagem
+                    writer.write(sendMessage);
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+        }
+    
+
     public static Mensagem recebeMensagem(Socket socket) {
         try {
             // Transforma o pacote em uma instância da classe Mensagem.
@@ -147,9 +168,13 @@ public class Servidor {
             int porta1 = getPorta(servidor[0]);
             // Abre um Socket para conexão com o ServerSocket
             Socket socket1 = new Socket(ip1, porta1);
-            // Envia para o primeiro vizinho
             mensagem.addReplicationCount();
-            enviaMensagem(socket1, mensagem);
+            // EXCLUIR
+            System.out.println("Enviou mensagem pro 1");
+            enviaMensagemSincrona(socket1, mensagem);
+             // EXCLUIR
+             Mensagem mensagemRecebida = recebeMensagem(socket1);
+            System.out.println("Recebeu response do 1:" + mensagemRecebida.isReplicationOk());
 
             // Obtém ip e porta
             String ip2 = getIp(servidor[1]);
@@ -158,7 +183,7 @@ public class Servidor {
             Socket socket2 = new Socket(ip2, porta2);
             // Envia para o primeiro vizinho
             mensagem.addReplicationCount();
-            enviaMensagem(socket2, mensagem);
+            enviaMensagemSincrona(socket2, mensagem);
             
         } catch (IOException e) {
             e.printStackTrace();
@@ -202,6 +227,8 @@ public class Servidor {
                             System.out.println("\nEnviou o replication PUT para todos os servidores");
 
                             replicaPut(vizinhos, mensagemRecebida);
+                            // EXCLUIR
+                            System.out.println("Chegou aqui");
                         } else {
                             // Encaminha para o lider
                             // enviaMensagem(lider, mensagemRecebida);
@@ -230,15 +257,18 @@ public class Servidor {
                         enviaMensagem(socketLider, mensagemRecebida);
                         // EXCLUIR
                         System.out.println("\nEnviou REPLICATION_OK");
-                    } else if (mensagemRecebida.isReplicationOk() && mensagemRecebida.getReplicationCount() == 2) {
+                    } else if (mensagemRecebida.isReplicationOk()) {
+                        // EXCLUIR
+                        System.out.println("\nReplication count: " + mensagemRecebida.getReplicationCount());
                         // EXCLUIR
                         System.out.println("\nAmbos servidores responderam com REPLICATION_OK");
-                        // Se ambos servidores realizaram o put e retornaram o "REPLICATION_OK"
+                        /*// Se ambos servidores realizaram o put e retornaram o "REPLICATION_OK"
                         mensagemRecebida.setResponse("PUT_OK");
                         // Envia PUT_OK para o solicitante
                         enviaMensagem(socket, mensagemRecebida);
                         // EXCLUIR
                         System.out.println("\nEncaminhou mensagem de volta ao cliente");
+                        */ 
                     }
 
                 } catch (Exception e) {
