@@ -13,11 +13,12 @@ import java.util.Scanner;
 import java.util.regex.Pattern;
 // Lib para escolher randômicamente
 import java.util.Random;
+import java.util.Date;
 // Lib para criar a tabela de Hash
-import java.util.HashMap; 
+import java.util.HashMap;
 
 public class Cliente {
-    
+
     private static Scanner entrada;
 
     /*
@@ -87,7 +88,7 @@ public class Cliente {
                     // Cria a cadeia de saída (escrita) de informações do socket
                     OutputStream os = socket.getOutputStream();
                     DataOutputStream writer = new DataOutputStream(os);
-                    
+
                     // declaração e preenchimento do buffer de envio
                     ByteArrayOutputStream baos = new ByteArrayOutputStream(6400);
                     ObjectOutputStream oos = new ObjectOutputStream(baos);
@@ -117,12 +118,15 @@ public class Cliente {
     }
 
     public static void put(String servidor, Mensagem mensagem) {
+        (new Thread() {
+            @Override
+            public void run() {
                 String ip = getIp(servidor);
                 int porta = getPorta(servidor);
                 try {
                     // Abre um Socket para conexão com o ServerSocket
                     Socket socket = new Socket(ip, porta);
-                    
+
                     // Envia mensagem
                     enviaMensagem(socket, mensagem);
 
@@ -130,10 +134,9 @@ public class Cliente {
                     Mensagem mensagemResponse = recebeMensagem(socket);
 
                     if (mensagemResponse.getResponse().equals("PUT_OK")) {
-                          System.out.println("PUT_OK value"); 
-                    } 
-
-                    System.out.println("Mensagem recebida, valor: " + mensagemResponse.getValor());
+                        System.out.println("PUT_OK value");
+                        System.out.println("Mensagem recebida, valor: " + mensagemResponse.getValor());
+                    }
 
                     // Fecha o Socket
                     socket.close();
@@ -141,6 +144,9 @@ public class Cliente {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
+            }
+
+        }).start();
     }
 
     public static void main(String[] args) throws Exception {
@@ -217,8 +223,10 @@ public class Cliente {
                     System.out.println("\nDigite o valor da propriedade:");
                     String valor = entrada.nextLine();
 
+                    // Seta valor de timestamp
+                    Date timestamp = new Date();
                     // Cria mensagem
-                    Mensagem mensagem = new Mensagem(propriedade, valor, isPut, false);
+                    Mensagem mensagem = new Mensagem(propriedade, valor, isPut, false, timestamp);
 
                     // Gera um número entre 0 e 2, para escolher o servidor de forma randômica
                     numeroServidor = rand.nextInt(2 + 1);
