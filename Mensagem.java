@@ -2,6 +2,8 @@
 import java.io.Serializable;
 // Lib para utilização de Data
 import java.util.Date;
+// Lib para criar a tabela de Hash
+import java.util.HashMap; 
 
 public class Mensagem implements Serializable {
     private static final long serialVersionUID = 6529685098267757690L;
@@ -57,5 +59,4 @@ public class Mensagem implements Serializable {
     public void setResponse(String response) {
         this.response = response;
     }
-
 }

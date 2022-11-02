@@ -13,8 +13,11 @@ import java.util.Scanner;
 import java.util.regex.Pattern;
 // Lib para escolher randômicamente
 import java.util.Random;
+// Lib para criar a tabela de Hash
+import java.util.HashMap; 
 
 public class Cliente {
+    
     private static Scanner entrada;
 
     /*
@@ -125,6 +128,10 @@ public class Cliente {
 
                     // Recebe response
                     Mensagem mensagemResponse = recebeMensagem(socket);
+
+                    if (mensagemResponse.getResponse().equals("PUT_OK")) {
+                          System.out.println("PUT_OK value"); 
+                    } 
 
                     System.out.println("Mensagem recebida, valor: " + mensagemResponse.getValor());
 

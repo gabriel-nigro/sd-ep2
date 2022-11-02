@@ -7,14 +7,37 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
+import java.io.ObjectInputStream;
 // Lib para tabela de Hash
 import java.util.HashMap;
 // Lib para validar input do usuário
 import java.util.regex.Pattern;
 // Lib para exceptions
 import java.io.IOException;
+// Lib para utilização de Data
+import java.util.Date;
 
 public class Servidor {
+
+    // Classe para utilizar dois valores no HashMap
+    public class valorHash {
+        private String valor;
+        private Date timestamp;
+        
+        public valorHash(String valor, Date timestamp) {
+            this.valor = valor;
+            this.timestamp = timestamp;
+        }
+
+        public String getValor() {
+            return this.valor;
+        }
+
+        public Date getTimestamp() {
+            return this.timestamp;
+        }
+    }
+    
     private static Scanner entrada;
 
     /*
@@ -75,12 +98,36 @@ public class Servidor {
         return inputInfos;
     }
 
-    public static void trataRequisicao(Socket node) {
+    public static Mensagem recebeMensagem(Socket socket) {
+        try {
+            // Transforma o pacote em uma instância da classe Mensagem.
+            ObjectInputStream is = new ObjectInputStream(socket.getInputStream());
+            Mensagem mensagem = (Mensagem) is.readObject();
+            return mensagem;
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    public static void trataRequisicao(Socket socket, String servidor, String[] vizinhos, String lider) {
         (new Thread() {
             @Override
             public void run() {
                 try {
-                    InputStreamReader is = new InputStreamReader(node.getInputStream());
+                    // Recebe mensagem
+                    Mensagem mensagemRecebida = recebeMensagem(socket);
+
+                    if(mensagemRecebida.isPut()) {
+                        // Mensagem PUT
+                        if (servidor.equals(lider)) {
+                            // Replica o PUT para os outros
+                        } else {
+                            // Envia para o lider
+                        }
+                    } else if (mensagemRecebida.isGet()) {
+                        // Mensagem GET
+                        
+                    }
 
                 } catch (IOException e) {
                     // TODO Auto-generated catch block
@@ -118,6 +165,9 @@ public class Servidor {
         // Inicializa servidor
         ServerSocket serverSocket = new ServerSocket(getPorta(serverInfos));
 
+        // Inicializa a tabela hash
+        HashMap<String, valorHash> tabelaHash = new HashMap<String, valorHash>();
+        
         while(true) {
             Socket node = serverSocket.accept();
         }
