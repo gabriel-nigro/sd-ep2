@@ -17,19 +17,15 @@ public class Mensagem implements Serializable {
     private boolean isFromClient;
     private String propriedade;
     private String valor;
-    private Date timestamp;
+    private long timestamp;
     private String response;
-    private Date responseTimestamp;
     private int replicationCount = 0;
     private UUID uuid = UUID.randomUUID();
 
 
-    public Mensagem(String propriedade, String valor, boolean isPut, boolean isGetl, Date timestamp) {
+    public Mensagem(String propriedade, String valor) {
         this.propriedade = propriedade;
         this.valor = valor;
-        this.isPut = isPut;
-        this. isGet = isGet;
-        this.timestamp = timestamp;
     }
 
     public String getPropriedade() {
@@ -60,16 +56,12 @@ public class Mensagem implements Serializable {
         return this.isFromClient;
     }
 
-    public Date getTimestamp() {
+    public long getTimestamp() {
         return this.timestamp;
     }
 
     public String getResponse() {
         return this.response;
-    }
-
-    public Date getResponseTimestamp() {
-        return this.responseTimestamp;
     }
 
     public int getReplicationCount() {
@@ -96,6 +88,10 @@ public class Mensagem implements Serializable {
         this.isPut = valor;
     }
 
+    public void setIsGet(boolean valor) {
+        this.isGet = valor;
+    }
+
     public void setIsReplication(boolean valor) {
         this.isReplication = valor;
     }
@@ -108,8 +104,8 @@ public class Mensagem implements Serializable {
         this.isFromClient = valor;
     }
 
-    public void setResponseTimestamp(Date timestamp) {
-        this.responseTimestamp = timestamp;
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
     }
 
     public void addReplicationCount() {

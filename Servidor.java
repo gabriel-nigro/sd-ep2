@@ -27,9 +27,9 @@ public class Servidor {
     // Classe para utilizar dois valores no HashMap
     static public class ValorHash {
         private String valor;
-        private Date timestamp;
+        private long timestamp;
 
-        public ValorHash(String valor, Date timestamp) {
+        public ValorHash(String valor, long timestamp) {
             this.valor = valor;
             this.timestamp = timestamp;
         }
@@ -38,7 +38,7 @@ public class Servidor {
             return this.valor;
         }
 
-        public Date getTimestamp() {
+        public long getTimestamp() {
             return this.timestamp;
         }
     }
@@ -133,25 +133,24 @@ public class Servidor {
     }
 
     public static void enviaMensagemSincrona(Socket socket, Mensagem mensagem) {
-                try {
-                    // Cria a cadeia de saída (escrita) de informações do socket
-                    OutputStream os = socket.getOutputStream();
-                    DataOutputStream writer = new DataOutputStream(os);
+        try {
+            // Cria a cadeia de saída (escrita) de informações do socket
+            OutputStream os = socket.getOutputStream();
+            DataOutputStream writer = new DataOutputStream(os);
 
-                    // declaração e preenchimento do buffer de envio
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream(6400);
-                    ObjectOutputStream oos = new ObjectOutputStream(baos);
-                    oos.writeObject(mensagem);
-                    final byte[] sendMessage = baos.toByteArray();
+            // declaração e preenchimento do buffer de envio
+            ByteArrayOutputStream baos = new ByteArrayOutputStream(6400);
+            ObjectOutputStream oos = new ObjectOutputStream(baos);
+            oos.writeObject(mensagem);
+            final byte[] sendMessage = baos.toByteArray();
 
-                    // Envia mensagem
-                    writer.write(sendMessage);
+            // Envia mensagem
+            writer.write(sendMessage);
 
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-    
+    }
 
     public static Mensagem recebeMensagem(Socket socket) {
         try {
@@ -174,9 +173,8 @@ public class Servidor {
             Socket socket1 = new Socket(ip1, porta1);
             mensagem.addReplicationCount();
             // EXCLUIR
-            System.out.println("Enviou mensagem pro 1");
+            //System.out.println("Enviou mensagem pro 1");
             enviaMensagemSincrona(socket1, mensagem);
-
 
             // Obtém ip e porta
             String ip2 = getIp(servidor[1]);
@@ -186,47 +184,57 @@ public class Servidor {
             // Envia para o primeiro vizinho
             mensagem.addReplicationCount();
             // EXCLUIR
-            System.out.println("Enviou mensagem pro 2");
+            //System.out.println("Enviou mensagem pro 2");
             enviaMensagemSincrona(socket2, mensagem);
-            
+
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public static void trataRequisicao(Socket cliente, Mensagem mensagemRecebida, String servidor, String[] vizinhos, String lider,
+    public static void trataRequisicao(Socket cliente, Mensagem mensagemRecebida, String servidor, String[] vizinhos,
+            String lider,
             HashMap<String, ValorHash> tabelaHash, HashMap<UUID, Socket> clientes) {
         (new Thread() {
             @Override
             public void run() {
                 try {
                     // EXCLUIR
-                    System.out.println("\nRecebeu mensagem");
+                    //System.out.println("\nRecebeu mensagem");
                     String propriedade = mensagemRecebida.getPropriedade();
                     String valor = mensagemRecebida.getValor();
-                    Date timestamp = mensagemRecebida.getTimestamp();
 
                     // Funcionalidade 5.c)
                     if (mensagemRecebida.isPut()) {
                         // Mensagem PUT
                         // EXCLUIR
-                        System.out.println("\nMensagem de PUT");
+                        //System.out.println("\nMensagem de PUT");
                         if (servidor.equals(lider)) {
                             // EXCLUIR
-                            System.out.println("\nÉ líder");
+                            // System.out.println("\nÉ líder");
+
+                            // 6)
+                            System.out.println("\nCliente []:[]" + " PUT key:" + mensagemRecebida.getPropriedade()
+                                    + " value:" + mensagemRecebida.getValor());
+                            // Associa um unix timestamp ao hash
+                            long timestamp = new Date().getTime() / 1000;
+                            mensagemRecebida.setTimestamp(timestamp);
 
                             // Caso não haja a propriedade, a mesma será adicionada.
                             // Caso esteja presente, será atualizada.
                             tabelaHash.put(propriedade, new ValorHash(valor, timestamp));
 
-                            // Trata mensagem para que seja compreendida corretamente pelos outros servidores
-                            mensagemRecebida.setIsPut(false);
+                            // Como a mensagem será replicada, isReplication é setado para "true" e isPut
+                            // para "false"
                             mensagemRecebida.setIsReplication(true);
+                            mensagemRecebida.setIsPut(false);
+                            // Como a mensagem será repassada aos servidores, isFromClient é setado para
+                            // "false"
                             mensagemRecebida.setIsFromClient(false);
 
                             // Replica o PUT para os outros servidores
                             // EXCLUIR
-                            System.out.println("\nEnviou o replication PUT para todos os servidores");
+                            // System.out.println("\nEnviou o replication PUT para todos os servidores");
                             replicaPut(vizinhos, mensagemRecebida);
                         } else {
                             // Encaminha para o lider
@@ -237,8 +245,13 @@ public class Servidor {
 
                     } else if (mensagemRecebida.isReplication()) {
                         // EXCLUIR
-                        System.out.println("\nRecebeu REPLICATION");
+                        //System.out.println("\nRecebeu REPLICATION");
+
+                        // 6)
+                        System.out.println("REPLICATION key:" + mensagemRecebida.getPropriedade() + " value:"
+                                + mensagemRecebida.getValor());
                         // Replicação da informação
+                        long timestamp = mensagemRecebida.getTimestamp();
                         tabelaHash.put(propriedade, new ValorHash(valor, timestamp));
 
                         // Servidor 1
@@ -255,27 +268,23 @@ public class Servidor {
                         // Devolve com REPLICATION_OK para líder
                         enviaMensagem(socketLider, mensagemRecebida);
                         // EXCLUIR
-                        System.out.println("\nEnviou REPLICATION_OK");
-                    } else if (mensagemRecebida.isReplicationOk()) {
+                        //System.out.println("\nEnviou REPLICATION_OK");
+                    } else if (mensagemRecebida.isReplicationOk() && mensagemRecebida.getReplicationCount() == 2) {
                         // EXCLUIR
-                        System.out.println("\nReplication count: " + mensagemRecebida.getReplicationCount());
-                        // Printa o REPLICATION_OK
-                        System.out.println("REPLICATION_OK");
-                        if (mensagemRecebida.getReplicationCount() == 2) {
-                            //EXCLUIR
-                            System.out.println("\nAmbos servidores responderam com REPLICATION_OK");
-                            // Quem enviou
-                            Socket remetente = clientes.get(mensagemRecebida.getUuid());
-                            mensagemRecebida.setResponse("PUT_OK");
-                            enviaMensagem(remetente, mensagemRecebida);
-                        }
-                        /*// Se ambos servidores realizaram o put e retornaram o "REPLICATION_OK"
+                        // System.out.println("\nReplication count: " +
+                        // mensagemRecebida.getReplicationCount());
+                        // EXCLUIR
+                        // System.out.println("\nREPLICATION_OK");
+                        // Quem enviou
+                        Socket remetente = clientes.get(mensagemRecebida.getUuid());
+                        // 6)
+                        long timestampDoServidor = new Date().getTime() / 1000;
+                        System.out.println("\nEnviando PUT_OK ao Cliente " + remetente.getLocalSocketAddress()
+                                + " da key:" + mensagemRecebida.getPropriedade() + " ts:" + timestampDoServidor);
+                        // Seta o response "PUT_OK" para o remetente
                         mensagemRecebida.setResponse("PUT_OK");
-                        // Envia PUT_OK para o solicitante
-                        enviaMensagem(socket, mensagemRecebida);
-                        // EXCLUIR
-                        System.out.println("\nEncaminhou mensagem de volta ao cliente");
-                        */ 
+                        // Envia mensagem ao remetente
+                        enviaMensagem(remetente, mensagemRecebida);
                     }
 
                 } catch (Exception e) {
@@ -322,12 +331,12 @@ public class Servidor {
 
         while (true) {
             Socket cliente = serverSocket.accept();
-            
+
             // Recebe mensagem
             Mensagem mensagemRecebida = recebeMensagem(cliente);
-            if(mensagemRecebida.isFromClient()) {
+            if (mensagemRecebida.isFromClient()) {
                 // Excluir
-                System.out.println("\nA mensagem recebida é do cliente");
+                // System.out.println("\nA mensagem recebida é do cliente");
                 clientes.put(mensagemRecebida.getUuid(), cliente);
             }
 

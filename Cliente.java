@@ -134,8 +134,7 @@ public class Cliente {
                     Mensagem mensagemResponse = recebeMensagem(socket);
 
                     if (mensagemResponse.getResponse().equals("PUT_OK")) {
-                        System.out.println("PUT_OK value");
-                        System.out.println("Mensagem recebida, valor: " + mensagemResponse.getValor());
+                        System.out.println("PUT_OK key: " + mensagemResponse.getPropriedade() + " value " + mensagemResponse.getValor() + " timestamp " + mensagemResponse.getTimestamp());
                     }
 
                     // Fecha o Socket
@@ -222,12 +221,11 @@ public class Cliente {
                     // Nome do valor
                     System.out.println("\nDigite o valor da propriedade:");
                     String valor = entrada.nextLine();
-
-                    // Seta valor de timestamp
-                    Date timestamp = new Date();
                     
                     // Cria mensagem
-                    Mensagem mensagem = new Mensagem(propriedade, valor, isPut, false, timestamp);
+                    Mensagem mensagem = new Mensagem(propriedade, valor);
+                    // Identifica que a mensagem é de PUT
+                    mensagem.setIsPut(true);
                     // Identificação que a mensagem vem do cliente
                     mensagem.setIsFromClient(true);
 
