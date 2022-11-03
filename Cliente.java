@@ -225,8 +225,11 @@ public class Cliente {
 
                     // Seta valor de timestamp
                     Date timestamp = new Date();
+                    
                     // Cria mensagem
                     Mensagem mensagem = new Mensagem(propriedade, valor, isPut, false, timestamp);
+                    // Identificação que a mensagem vem do cliente
+                    mensagem.setIsFromClient(true);
 
                     // Gera um número entre 0 e 2, para escolher o servidor de forma randômica
                     numeroServidor = rand.nextInt(2 + 1);

@@ -1,6 +1,7 @@
 
 // Lib para leitura de input do usuário
 import java.util.Scanner;
+import java.util.UUID;
 // Libs para socket
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -17,6 +18,7 @@ import java.util.HashMap;
 import java.util.regex.Pattern;
 // Lib para exceptions
 import java.io.IOException;
+import java.util.ArrayList;
 // Lib para utilização de Data
 import java.util.Date;
 
@@ -40,6 +42,8 @@ public class Servidor {
             return this.timestamp;
         }
     }
+
+    // Classe
 
     private static Scanner entrada;
 
@@ -172,9 +176,7 @@ public class Servidor {
             // EXCLUIR
             System.out.println("Enviou mensagem pro 1");
             enviaMensagemSincrona(socket1, mensagem);
-             // EXCLUIR
-             Mensagem mensagemRecebida = recebeMensagem(socket1);
-            System.out.println("Recebeu response do 1:" + mensagemRecebida.isReplicationOk());
+
 
             // Obtém ip e porta
             String ip2 = getIp(servidor[1]);
@@ -183,6 +185,8 @@ public class Servidor {
             Socket socket2 = new Socket(ip2, porta2);
             // Envia para o primeiro vizinho
             mensagem.addReplicationCount();
+            // EXCLUIR
+            System.out.println("Enviou mensagem pro 2");
             enviaMensagemSincrona(socket2, mensagem);
             
         } catch (IOException e) {
@@ -190,20 +194,17 @@ public class Servidor {
         }
     }
 
-    public static void trataRequisicao(Socket socket, String servidor, String[] vizinhos, String lider,
-            HashMap<String, ValorHash> tabelaHash) {
+    public static void trataRequisicao(Socket cliente, Mensagem mensagemRecebida, String servidor, String[] vizinhos, String lider,
+            HashMap<String, ValorHash> tabelaHash, HashMap<UUID, Socket> clientes) {
         (new Thread() {
             @Override
             public void run() {
                 try {
-                    // Recebe mensagem
-                    Mensagem mensagemRecebida = recebeMensagem(socket);
+                    // EXCLUIR
+                    System.out.println("\nRecebeu mensagem");
                     String propriedade = mensagemRecebida.getPropriedade();
                     String valor = mensagemRecebida.getValor();
                     Date timestamp = mensagemRecebida.getTimestamp();
-
-                    // EXCLUIR
-                    System.out.println("\nRecebeu mensagem");
 
                     // Funcionalidade 5.c)
                     if (mensagemRecebida.isPut()) {
@@ -218,17 +219,15 @@ public class Servidor {
                             // Caso esteja presente, será atualizada.
                             tabelaHash.put(propriedade, new ValorHash(valor, timestamp));
 
+                            // Trata mensagem para que seja compreendida corretamente pelos outros servidores
                             mensagemRecebida.setIsPut(false);
                             mensagemRecebida.setIsReplication(true);
+                            mensagemRecebida.setIsFromClient(false);
 
                             // Replica o PUT para os outros servidores
-
                             // EXCLUIR
                             System.out.println("\nEnviou o replication PUT para todos os servidores");
-
                             replicaPut(vizinhos, mensagemRecebida);
-                            // EXCLUIR
-                            System.out.println("Chegou aqui");
                         } else {
                             // Encaminha para o lider
                             // enviaMensagem(lider, mensagemRecebida);
@@ -260,8 +259,16 @@ public class Servidor {
                     } else if (mensagemRecebida.isReplicationOk()) {
                         // EXCLUIR
                         System.out.println("\nReplication count: " + mensagemRecebida.getReplicationCount());
-                        // EXCLUIR
-                        System.out.println("\nAmbos servidores responderam com REPLICATION_OK");
+                        // Printa o REPLICATION_OK
+                        System.out.println("REPLICATION_OK");
+                        if (mensagemRecebida.getReplicationCount() == 2) {
+                            //EXCLUIR
+                            System.out.println("\nAmbos servidores responderam com REPLICATION_OK");
+                            // Quem enviou
+                            Socket remetente = clientes.get(mensagemRecebida.getUuid());
+                            mensagemRecebida.setResponse("PUT_OK");
+                            enviaMensagem(remetente, mensagemRecebida);
+                        }
                         /*// Se ambos servidores realizaram o put e retornaram o "REPLICATION_OK"
                         mensagemRecebida.setResponse("PUT_OK");
                         // Envia PUT_OK para o solicitante
@@ -310,9 +317,21 @@ public class Servidor {
         // Inicializa a tabela hash
         HashMap<String, ValorHash> tabelaHash = new HashMap<String, ValorHash>();
 
+        // Tabela de hash de clientes
+        HashMap<UUID, Socket> clientes = new HashMap<UUID, Socket>();
+
         while (true) {
-            Socket socket = serverSocket.accept();
-            trataRequisicao(socket, serverInfos, vizinhos, lider, tabelaHash);
+            Socket cliente = serverSocket.accept();
+            
+            // Recebe mensagem
+            Mensagem mensagemRecebida = recebeMensagem(cliente);
+            if(mensagemRecebida.isFromClient()) {
+                // Excluir
+                System.out.println("\nA mensagem recebida é do cliente");
+                clientes.put(mensagemRecebida.getUuid(), cliente);
+            }
+
+            trataRequisicao(cliente, mensagemRecebida, serverInfos, vizinhos, lider, tabelaHash, clientes);
         }
 
     }

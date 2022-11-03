@@ -4,7 +4,8 @@ import java.net.Socket;
 // Lib para utilização de Data
 import java.util.Date;
 // Lib para criar a tabela de Hash
-import java.util.HashMap; 
+import java.util.HashMap;
+import java.util.UUID; 
 
 public class Mensagem implements Serializable {
     private static final long serialVersionUID = 6529685098267757690L;
@@ -13,13 +14,14 @@ public class Mensagem implements Serializable {
     private boolean isGet;
     private boolean isReplication;
     private boolean isReplicationOk;
+    private boolean isFromClient;
     private String propriedade;
     private String valor;
     private Date timestamp;
     private String response;
     private Date responseTimestamp;
     private int replicationCount = 0;
-    private Socket socketSolicitante;
+    private UUID uuid = UUID.randomUUID();
 
 
     public Mensagem(String propriedade, String valor, boolean isPut, boolean isGetl, Date timestamp) {
@@ -54,6 +56,10 @@ public class Mensagem implements Serializable {
         return this.isReplicationOk;
     }
 
+    public boolean isFromClient() {
+        return this.isFromClient;
+    }
+
     public Date getTimestamp() {
         return this.timestamp;
     }
@@ -70,8 +76,8 @@ public class Mensagem implements Serializable {
         return this.replicationCount;
     }
 
-    public Socket getSocketSolicitante() {
-        return this.socketSolicitante;
+    public UUID getUuid() {
+        return this.uuid;
     }
 
     public void setPropriedade(String propriedade) {
@@ -98,12 +104,12 @@ public class Mensagem implements Serializable {
         this.isReplicationOk = valor;
     }
 
-    public void setResponseTimestamp(Date timestamp) {
-        this.responseTimestamp = timestamp;
+    public void setIsFromClient(boolean valor) {
+        this.isFromClient = valor;
     }
 
-    public void setSocketSolicitante(Socket socketSolicitante) {
-        this.socketSolicitante = socketSolicitante;
+    public void setResponseTimestamp(Date timestamp) {
+        this.responseTimestamp = timestamp;
     }
 
     public void addReplicationCount() {
