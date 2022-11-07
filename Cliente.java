@@ -134,7 +134,8 @@ public class Cliente {
                     Mensagem mensagemResponse = recebeMensagem(socket);
 
                     if (mensagemResponse.getResponse().equals("PUT_OK")) {
-                        System.out.println("PUT_OK key: " + mensagemResponse.getPropriedade() + " value " + mensagemResponse.getValor() + " timestamp " + mensagemResponse.getTimestamp());
+                        System.out.println("PUT_OK key: " + mensagemResponse.getPropriedade() + " value "
+                                + mensagemResponse.getValor() + " timestamp " + mensagemResponse.getTimestamp());
                     }
 
                     // Fecha o Socket
@@ -221,11 +222,13 @@ public class Cliente {
                     // Nome do valor
                     System.out.println("\nDigite o valor da propriedade:");
                     String valor = entrada.nextLine();
-                    
+
                     // Cria mensagem
-                    Mensagem mensagem = new Mensagem(propriedade, valor);
+                    Mensagem mensagem = new Mensagem(propriedade);
+                    // Assume o valor da propriedade a ser inserida nos servidores
+                    mensagem.setValor(valor);
                     // Identifica que a mensagem é de PUT
-                    mensagem.setIsPut(true);
+                    mensagem.setIsPut(isPut);
                     // Identificação que a mensagem vem do cliente
                     mensagem.setIsFromClient(true);
 
@@ -238,7 +241,8 @@ public class Cliente {
                     break;
                 }
                 case 3: {
-                    // Funcionalidade 4.f)
+                    // Funcionalidade 4.c)
+                    boolean isGet = true;
 
                     // Verifica se o servidor já foi inicializado
                     if (!isInitialized) {
@@ -247,8 +251,25 @@ public class Cliente {
                         break;
                     }
 
+                    // Nome da propriedade
+                    System.out.println("\nDigite o nome da propriedade:");
+                    String propriedade = entrada.nextLine();
+
+                    // Cria mensagem
+                    Mensagem mensagem = new Mensagem(propriedade);
+                    // Identifica que a mensagem é de PUT
+                    mensagem.setIsGet(isGet);
+                    // Identificação que a mensagem vem do cliente
+                    mensagem.setIsFromClient(true);
+                    // Identifica o timestamp do cliente
+                    long timestampCliente = new Date().getTime() / 1000;
+                    mensagem.setTimestampCliente(timestampCliente);
+
+
                     // Gera um número entre 0 e 2, para escolher o servidor de forma randômica
                     numeroServidor = rand.nextInt(2 + 1);
+
+                    //
 
                     break;
                 }

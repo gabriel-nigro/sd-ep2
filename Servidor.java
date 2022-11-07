@@ -237,11 +237,40 @@ public class Servidor {
                             // System.out.println("\nEnviou o replication PUT para todos os servidores");
                             replicaPut(vizinhos, mensagemRecebida);
                         } else {
+                            // Cria Socket com o Líder
+                            String ipLider = getIp(lider);
+                            int portaLider = getPorta(lider);
+                            Socket socketLider = new Socket(ipLider, portaLider);
+                            
+                            // 6)
+                            System.out.println("Encaminhando PUT key:" + mensagemRecebida.getPropriedade() + " value:" + mensagemRecebida.getValor());
+
                             // Encaminha para o lider
-                            // enviaMensagem(lider, mensagemRecebida);
+                            enviaMensagem(socketLider, mensagemRecebida);
                         }
                     } else if (mensagemRecebida.isGet()) {
                         // Mensagem GET
+
+                        // Funcionalidade 5.f)
+                        long timestampHash = tabelaHash.get(mensagemRecebida.getPropriedade()).getTimestamp();
+                        long timestampCliente = mensagemRecebida.getTimestampCliente();
+
+                        // Obtém remetente
+                        Socket remetente = clientes.get(mensagemRecebida.getUuid());
+
+                        if (timestampCliente < timestampHash) {
+                            // Seta o response
+                            String valorHash = tabelaHash.get(mensagemRecebida.getPropriedade()).getValor();
+                            mensagemRecebida.setResponse(valorHash);
+                            // Encaminha para o cliente
+                            enviaMensagem(remetente, mensagemRecebida);
+                        } else {
+                            // Seta o response
+                            mensagemRecebida.setResponse("TRY_OTHER_SERVER_OR_LATER");
+                            // Encaminha para o cliente
+                            enviaMensagem(remetente, mensagemRecebida);
+                        }
+                        
 
                     } else if (mensagemRecebida.isReplication()) {
                         // EXCLUIR

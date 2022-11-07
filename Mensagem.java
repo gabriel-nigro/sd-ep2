@@ -18,14 +18,14 @@ public class Mensagem implements Serializable {
     private String propriedade;
     private String valor;
     private long timestamp;
+    private long timestampCliente;
     private String response;
     private int replicationCount = 0;
     private UUID uuid = UUID.randomUUID();
 
 
-    public Mensagem(String propriedade, String valor) {
+    public Mensagem(String propriedade) {
         this.propriedade = propriedade;
-        this.valor = valor;
     }
 
     public String getPropriedade() {
@@ -58,6 +58,10 @@ public class Mensagem implements Serializable {
 
     public long getTimestamp() {
         return this.timestamp;
+    }
+
+    public long getTimestampCliente() {
+        return this.timestampCliente;
     }
 
     public String getResponse() {
@@ -106,6 +110,10 @@ public class Mensagem implements Serializable {
 
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public void setTimestampCliente(long timestamp) {
+        this.timestampCliente = timestamp;
     }
 
     public void addReplicationCount() {

@@ -50,7 +50,7 @@ public class Teste {
         HashMap<UUID, String> clientes = new HashMap<UUID, String>();
         UUID uuid = UUID.randomUUID();
         clientes.put(uuid, "nada");
-        System.out.println(clientes.get(uuid));
+        System.out.println("Teste de pegar chave: " +clientes.get("nada"));
 
        /*Socket socket = new Socket("127.0.0.1", 10097);
         System.out.println("Inet Address: " + socket.getInetAddress());
