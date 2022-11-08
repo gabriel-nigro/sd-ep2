@@ -43,7 +43,23 @@ public class Servidor {
         }
     }
 
-    // Classe
+    // Classe para armazenar os valores de Hash
+    static public class TabelaHash {
+
+        // Inicializa a tabela hash
+        HashMap<String, ValorHash> tabelaHash = new HashMap<String, ValorHash>();
+
+        public TabelaHash() {
+        };
+
+        public ValorHash get(String propriedade) {
+            return this.tabelaHash.get(propriedade);
+        }
+
+        public void put(String propriedade, String valor, long timestamp) {
+            this.tabelaHash.put(propriedade, new ValorHash(valor, timestamp));
+        }
+    }
 
     private static Scanner entrada;
 
@@ -173,7 +189,7 @@ public class Servidor {
             Socket socket1 = new Socket(ip1, porta1);
             mensagem.addReplicationCount();
             // EXCLUIR
-            //System.out.println("Enviou mensagem pro 1");
+            // System.out.println("Enviou mensagem pro 1");
             enviaMensagemSincrona(socket1, mensagem);
 
             // Obtém ip e porta
@@ -184,7 +200,7 @@ public class Servidor {
             // Envia para o primeiro vizinho
             mensagem.addReplicationCount();
             // EXCLUIR
-            //System.out.println("Enviou mensagem pro 2");
+            // System.out.println("Enviou mensagem pro 2");
             enviaMensagemSincrona(socket2, mensagem);
 
         } catch (IOException e) {
@@ -193,14 +209,13 @@ public class Servidor {
     }
 
     public static void trataRequisicao(Socket cliente, Mensagem mensagemRecebida, String servidor, String[] vizinhos,
-            String lider,
-            HashMap<String, ValorHash> tabelaHash, HashMap<UUID, Socket> clientes) {
+            String lider, TabelaHash tabelaHash, HashMap<UUID, Socket> clientes) {
         (new Thread() {
             @Override
             public void run() {
                 try {
                     // EXCLUIR
-                    //System.out.println("\nRecebeu mensagem");
+                    // System.out.println("\nRecebeu mensagem");
                     String propriedade = mensagemRecebida.getPropriedade();
                     String valor = mensagemRecebida.getValor();
 
@@ -208,13 +223,13 @@ public class Servidor {
                     if (mensagemRecebida.isPut()) {
                         // Mensagem PUT
                         // EXCLUIR
-                        //System.out.println("\nMensagem de PUT");
+                        // System.out.println("\nMensagem de PUT");
                         if (servidor.equals(lider)) {
                             // EXCLUIR
                             // System.out.println("\nÉ líder");
 
                             // 6)
-                            System.out.println("\nCliente []:[]" + " PUT key:" + mensagemRecebida.getPropriedade()
+                            System.out.println("\nCliente " + lider + " PUT key:" + mensagemRecebida.getPropriedade()
                                     + " value:" + mensagemRecebida.getValor());
                             // Associa um unix timestamp ao hash
                             long timestamp = new Date().getTime() / 1000;
@@ -222,7 +237,7 @@ public class Servidor {
 
                             // Caso não haja a propriedade, a mesma será adicionada.
                             // Caso esteja presente, será atualizada.
-                            tabelaHash.put(propriedade, new ValorHash(valor, timestamp));
+                            tabelaHash.put(propriedade, valor, timestamp);
 
                             // Como a mensagem será replicada, isReplication é setado para "true" e isPut
                             // para "false"
@@ -241,9 +256,10 @@ public class Servidor {
                             String ipLider = getIp(lider);
                             int portaLider = getPorta(lider);
                             Socket socketLider = new Socket(ipLider, portaLider);
-                            
+
                             // 6)
-                            System.out.println("Encaminhando PUT key:" + mensagemRecebida.getPropriedade() + " value:" + mensagemRecebida.getValor());
+                            System.out.println("Encaminhando PUT key:" + mensagemRecebida.getPropriedade() + " value:"
+                                    + mensagemRecebida.getValor());
 
                             // Encaminha para o lider
                             enviaMensagem(socketLider, mensagemRecebida);
@@ -251,14 +267,26 @@ public class Servidor {
                     } else if (mensagemRecebida.isGet()) {
                         // Mensagem GET
 
-                        // Funcionalidade 5.f)
-                        long timestampHash = tabelaHash.get(mensagemRecebida.getPropriedade()).getTimestamp();
-                        long timestampCliente = mensagemRecebida.getTimestampCliente();
-
                         // Obtém remetente
                         Socket remetente = clientes.get(mensagemRecebida.getUuid());
 
-                        if (timestampCliente < timestampHash) {
+                        // Funcionalidade 5.f)
+                        ValorHash chave = tabelaHash.get(mensagemRecebida.getPropriedade());
+                        if (chave == null) {
+                            // EXCLUIR
+                            System.out.println("CHave não existe, retorna null");
+                            // Seta o response
+                            mensagemRecebida.setResponse(null);
+                            // Encaminha para o cliente
+                            enviaMensagem(remetente, mensagemRecebida);
+                        }
+                        long timestampHash = chave.getTimestamp();
+                        long timestampCliente = mensagemRecebida.getTimestampCliente();
+
+                        // Seta o timestamp da chave
+                        mensagemRecebida.setTimestamp(timestampHash);
+
+                        if (timestampHash >= timestampCliente) {
                             // Seta o response
                             String valorHash = tabelaHash.get(mensagemRecebida.getPropriedade()).getValor();
                             mensagemRecebida.setResponse(valorHash);
@@ -270,18 +298,17 @@ public class Servidor {
                             // Encaminha para o cliente
                             enviaMensagem(remetente, mensagemRecebida);
                         }
-                        
 
                     } else if (mensagemRecebida.isReplication()) {
                         // EXCLUIR
-                        //System.out.println("\nRecebeu REPLICATION");
+                        // System.out.println("\nRecebeu REPLICATION");
 
                         // 6)
                         System.out.println("REPLICATION key:" + mensagemRecebida.getPropriedade() + " value:"
                                 + mensagemRecebida.getValor());
                         // Replicação da informação
                         long timestamp = mensagemRecebida.getTimestamp();
-                        tabelaHash.put(propriedade, new ValorHash(valor, timestamp));
+                        tabelaHash.put(propriedade, valor, timestamp);
 
                         // Servidor 1
                         // Obtém ip e porta
@@ -297,7 +324,7 @@ public class Servidor {
                         // Devolve com REPLICATION_OK para líder
                         enviaMensagem(socketLider, mensagemRecebida);
                         // EXCLUIR
-                        //System.out.println("\nEnviou REPLICATION_OK");
+                        // System.out.println("\nEnviou REPLICATION_OK");
                     } else if (mensagemRecebida.isReplicationOk() && mensagemRecebida.getReplicationCount() == 2) {
                         // EXCLUIR
                         // System.out.println("\nReplication count: " +
@@ -353,7 +380,7 @@ public class Servidor {
         ServerSocket serverSocket = new ServerSocket(getPorta(serverInfos));
 
         // Inicializa a tabela hash
-        HashMap<String, ValorHash> tabelaHash = new HashMap<String, ValorHash>();
+        TabelaHash tabelaHash = new TabelaHash();
 
         // Tabela de hash de clientes
         HashMap<UUID, Socket> clientes = new HashMap<UUID, Socket>();

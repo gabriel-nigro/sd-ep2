@@ -21,6 +21,43 @@ public class Cliente {
 
     private static Scanner entrada;
 
+    // Classe para utilizar dois valores no HashMap
+    static public class ValorHash {
+        private String valor;
+        private long timestamp;
+
+        public ValorHash(String valor, long timestamp) {
+            this.valor = valor;
+            this.timestamp = timestamp;
+        }
+
+        public String getValor() {
+            return this.valor;
+        }
+
+        public long getTimestamp() {
+            return this.timestamp;
+        }
+    }
+
+    // Classe para armazenar os valores de Hash
+    static public class TabelaHash {
+
+        // Inicializa a tabela hash
+        HashMap<String, ValorHash> tabelaHash = new HashMap<String, ValorHash>();
+
+        public TabelaHash() {
+        };
+
+        public ValorHash get(String propriedade) {
+            return this.tabelaHash.get(propriedade);
+        }
+
+        public void put(String propriedade, String valor, long timestamp) {
+            this.tabelaHash.put(propriedade, new ValorHash(valor, timestamp));
+        }
+    }
+
     /*
      * O método é responsável por obter o IP a partir de uma string no formato
      * IPV4:PORTA
@@ -149,6 +186,39 @@ public class Cliente {
         }).start();
     }
 
+    public static void get(String servidor, Mensagem mensagem, HashMap<String, ValorHash> tabelaHash) {
+        (new Thread() {
+            @Override
+            public void run() {
+                String ip = getIp(servidor);
+                int porta = getPorta(servidor);
+                try {
+                    // Abre um Socket para conexão com o ServerSocket
+                    Socket socket = new Socket(ip, porta);
+
+                    // Envia mensagem
+                    enviaMensagem(socket, mensagem);
+
+                    // Recebe response
+                    Mensagem mensagemResponse = recebeMensagem(socket);
+
+                    if (mensagemResponse.getResponse().equals("TRY_OTHER_SERVER_OR_LATER")) {
+                        System.out.println("TRY_OTHER_SERVER_OR_LATER");
+                    } else {
+                        System.out.println("GET key: " + mensagemResponse.getPropriedade() + " value "
+                                + mensagemResponse.getResponse() + " obtido do servidor " + servidor + ", meu timestamp " + mensagemResponse.getTimestampCliente() + " e do servidor " + mensagemResponse.getTimestamp());
+                    }
+
+                    // Fecha o Socket
+                    socket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+        }).start();
+    }
+
     public static void main(String[] args) throws Exception {
         // Variável que guarda o input do usuário
         entrada = new Scanner(System.in);
@@ -166,6 +236,9 @@ public class Cliente {
         // Variável para escolher o servidor randomicamente
         Random rand = new Random();
         int numeroServidor;
+
+        // Inicializa a tabela hash
+        HashMap<String, ValorHash> tabelaHash = new HashMap<String, ValorHash>();
 
         while (true) {
             System.out.println("\nMenu de acoes.");
@@ -261,15 +334,20 @@ public class Cliente {
                     mensagem.setIsGet(isGet);
                     // Identificação que a mensagem vem do cliente
                     mensagem.setIsFromClient(true);
-                    // Identifica o timestamp do cliente
-                    long timestampCliente = new Date().getTime() / 1000;
-                    mensagem.setTimestampCliente(timestampCliente);
-
+                    // Identifica o timestamp da chave presente na base do cliente
+                    ValorHash chave = tabelaHash.get(propriedade); 
+                    // Verifica se a chave já existe para o cliente
+                    if (chave == null) {
+                        mensagem.setTimestampCliente(0);
+                    } else {
+                        mensagem.setTimestampCliente(chave.getTimestamp());
+                    }
 
                     // Gera um número entre 0 e 2, para escolher o servidor de forma randômica
                     numeroServidor = rand.nextInt(2 + 1);
 
-                    //
+                    // 
+                    get(servidores[numeroServidor], mensagem, tabelaHash);
 
                     break;
                 }
@@ -278,43 +356,6 @@ public class Cliente {
                     break;
             }
         }
-        /*
-         * try {
-         * Socket s = new Socket("127.0.0.1", 9000);
-         * 
-         * OutputStream os = s.getOutputStream();
-         * DataOutputStream writer = new DataOutputStream(os);
-         * 
-         * InputStreamReader is = new InputStreamReader(s.getInputStream());
-         * BufferedReader reader = new BufferedReader(is);
-         * 
-         * //BufferedReader inFromUser = new BufferedReader(new
-         * InputStreamReader(System.in));
-         * 
-         * //String texto = inFromUser.readLine();
-         * 
-         * //writer.writeBytes(texto + "\n");
-         * 
-         * // Cria mensagem
-         * Mensagem mensagem = new Mensagem("abobora", "abobora", false, false);
-         * 
-         * // declaração e preenchimento do buffer de envio
-         * ByteArrayOutputStream baos = new ByteArrayOutputStream(6400);
-         * ObjectOutputStream oos = new ObjectOutputStream(baos);
-         * oos.writeObject(mensagem);
-         * final byte[] sendMessage = baos.toByteArray();
-         * 
-         * writer.write(sendMessage);
-         * 
-         * String response = reader.readLine();
-         * System.out.println("DoServidor: " + response);
-         * 
-         * s.close();
-         * } catch (IOException e) {
-         * // TODO Auto-generated catch block
-         * e.printStackTrace();
-         * }
-         */
     }
 
 }
