@@ -170,9 +170,12 @@ public class Cliente {
                     // Recebe response
                     Mensagem mensagemResponse = recebeMensagem(socket);
 
+                    System.out.println("RECEBEU ME NSAGEM,:" + mensagemResponse.getResponse());
+
                     if (mensagemResponse.getResponse().equals("PUT_OK")) {
-                        System.out.println("PUT_OK key: " + mensagemResponse.getPropriedade() + " value "
-                                + mensagemResponse.getValor() + " timestamp " + mensagemResponse.getTimestamp());
+                        System.out.println("\nPUT_OK key:" + mensagemResponse.getPropriedade() + " value:"
+                                + mensagemResponse.getValor() + " timestamp " + mensagemResponse.getTimestamp()
+                                + " realizada no servidor " + servidor);
                     }
 
                     // Fecha o Socket
@@ -182,41 +185,42 @@ public class Cliente {
                     e.printStackTrace();
                 }
             }
-
         }).start();
     }
 
-    public static void get(String servidor, Mensagem mensagem, HashMap<String, ValorHash> tabelaHash) {
-        (new Thread() {
-            @Override
-            public void run() {
-                String ip = getIp(servidor);
-                int porta = getPorta(servidor);
-                try {
-                    // Abre um Socket para conexão com o ServerSocket
-                    Socket socket = new Socket(ip, porta);
+    public static void get(String servidor, Mensagem mensagem, TabelaHash tabelaHash) {
+        String ip = getIp(servidor);
+        int porta = getPorta(servidor);
+        try {
+            // Abre um Socket para conexão com o ServerSocket
+            Socket socket = new Socket(ip, porta);
 
-                    // Envia mensagem
-                    enviaMensagem(socket, mensagem);
+            // Envia mensagem
+            enviaMensagem(socket, mensagem);
 
-                    // Recebe response
-                    Mensagem mensagemResponse = recebeMensagem(socket);
+            // Recebe response
+            Mensagem mensagemResponse = recebeMensagem(socket);
 
-                    if (mensagemResponse.getResponse().equals("TRY_OTHER_SERVER_OR_LATER")) {
-                        System.out.println("TRY_OTHER_SERVER_OR_LATER");
-                    } else {
-                        System.out.println("GET key: " + mensagemResponse.getPropriedade() + " value "
-                                + mensagemResponse.getResponse() + " obtido do servidor " + servidor + ", meu timestamp " + mensagemResponse.getTimestampCliente() + " e do servidor " + mensagemResponse.getTimestamp());
-                    }
+            if (mensagemResponse.getResponse() == null) {
+                System.out.println("\nChave não existe no servidor " + servidor);
+            } else if (mensagemResponse.getResponse().equals("TRY_OTHER_SERVER_OR_LATER")) {
+                System.out.println("\nTRY_OTHER_SERVER_OR_LATER");
+            } else {
+                // Adiciona a tabela hash para log
+                tabelaHash.put(mensagemResponse.getPropriedade(), mensagemResponse.getResponse(),
+                        mensagemResponse.getTimestamp());
 
-                    // Fecha o Socket
-                    socket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                // 6)
+                System.out.println("\nGET key: " + mensagemResponse.getPropriedade() + " value: "
+                        + mensagemResponse.getResponse() + " obtido do servidor " + servidor + ", meu timestamp "
+                        + mensagemResponse.getTimestampCliente() + " e do servidor " + mensagemResponse.getTimestamp());
             }
 
-        }).start();
+            // Fecha o Socket
+            socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void main(String[] args) throws Exception {
@@ -238,7 +242,7 @@ public class Cliente {
         int numeroServidor;
 
         // Inicializa a tabela hash
-        HashMap<String, ValorHash> tabelaHash = new HashMap<String, ValorHash>();
+        TabelaHash tabelaHash = new TabelaHash();
 
         while (true) {
             System.out.println("\nMenu de acoes.");
@@ -308,6 +312,9 @@ public class Cliente {
                     // Gera um número entre 0 e 2, para escolher o servidor de forma randômica
                     numeroServidor = rand.nextInt(2 + 1);
 
+                    // EXCLUIR
+                    System.out.println("Mensagem UUID: " + mensagem.getUuid());
+
                     // Envia o put
                     put(servidores[numeroServidor], mensagem);
 
@@ -334,8 +341,9 @@ public class Cliente {
                     mensagem.setIsGet(isGet);
                     // Identificação que a mensagem vem do cliente
                     mensagem.setIsFromClient(true);
+
                     // Identifica o timestamp da chave presente na base do cliente
-                    ValorHash chave = tabelaHash.get(propriedade); 
+                    ValorHash chave = tabelaHash.get(propriedade);
                     // Verifica se a chave já existe para o cliente
                     if (chave == null) {
                         mensagem.setTimestampCliente(0);
@@ -346,7 +354,7 @@ public class Cliente {
                     // Gera um número entre 0 e 2, para escolher o servidor de forma randômica
                     numeroServidor = rand.nextInt(2 + 1);
 
-                    // 
+                    // Envia o GET
                     get(servidores[numeroServidor], mensagem, tabelaHash);
 
                     break;

@@ -224,6 +224,8 @@ public class Servidor {
                         // Mensagem PUT
                         // EXCLUIR
                         // System.out.println("\nMensagem de PUT");
+                        // Identifica qual foi o servidor a receber a mensagem
+                        mensagemRecebida.setServidorReceptorPrimario(servidor);
                         if (servidor.equals(lider)) {
                             // EXCLUIR
                             // System.out.println("\nÉ líder");
@@ -258,7 +260,7 @@ public class Servidor {
                             Socket socketLider = new Socket(ipLider, portaLider);
 
                             // 6)
-                            System.out.println("Encaminhando PUT key:" + mensagemRecebida.getPropriedade() + " value:"
+                            System.out.println("\nEncaminhando PUT key:" + mensagemRecebida.getPropriedade() + " value:"
                                     + mensagemRecebida.getValor());
 
                             // Encaminha para o lider
@@ -274,37 +276,45 @@ public class Servidor {
                         ValorHash chave = tabelaHash.get(mensagemRecebida.getPropriedade());
                         if (chave == null) {
                             // EXCLUIR
-                            System.out.println("CHave não existe, retorna null");
+                            //System.out.println("Chave não existe, retorna null");
                             // Seta o response
                             mensagemRecebida.setResponse(null);
                             // Encaminha para o cliente
                             enviaMensagem(remetente, mensagemRecebida);
-                        }
-                        long timestampHash = chave.getTimestamp();
-                        long timestampCliente = mensagemRecebida.getTimestampCliente();
 
-                        // Seta o timestamp da chave
-                        mensagemRecebida.setTimestamp(timestampHash);
-
-                        if (timestampHash >= timestampCliente) {
-                            // Seta o response
-                            String valorHash = tabelaHash.get(mensagemRecebida.getPropriedade()).getValor();
-                            mensagemRecebida.setResponse(valorHash);
-                            // Encaminha para o cliente
-                            enviaMensagem(remetente, mensagemRecebida);
                         } else {
-                            // Seta o response
-                            mensagemRecebida.setResponse("TRY_OTHER_SERVER_OR_LATER");
-                            // Encaminha para o cliente
-                            enviaMensagem(remetente, mensagemRecebida);
-                        }
+                            // Chave existe, logo verifica se o cliente possui a chave mais atualizada do
+                            // que o servidor
 
+                            long timestampHash = chave.getTimestamp();
+                            long timestampCliente = mensagemRecebida.getTimestampCliente();
+
+                            // Seta o timestamp da chave
+                            mensagemRecebida.setTimestamp(timestampHash);
+
+                            if (timestampHash >= timestampCliente) {
+                                // Seta o response
+                                String valorHash = tabelaHash.get(mensagemRecebida.getPropriedade()).getValor();
+                                mensagemRecebida.setResponse(valorHash);
+                                // Encaminha para o cliente
+                                enviaMensagem(remetente, mensagemRecebida);
+                            } else {
+                                // Seta o response
+                                mensagemRecebida.setResponse("TRY_OTHER_SERVER_OR_LATER");
+                                // Encaminha para o cliente
+                                enviaMensagem(remetente, mensagemRecebida);
+                            }
+                            System.out.println("\nCliente " + servidor + " GET key:" + mensagemRecebida.getPropriedade()
+                                    + " ts:" + mensagemRecebida.getTimestampCliente() + ". Meu ts é "
+                                    + mensagemRecebida.getTimestamp() + ", portanto devolvendo "
+                                    + mensagemRecebida.getResponse());
+                        }
                     } else if (mensagemRecebida.isReplication()) {
                         // EXCLUIR
                         // System.out.println("\nRecebeu REPLICATION");
 
                         // 6)
-                        System.out.println("REPLICATION key:" + mensagemRecebida.getPropriedade() + " value:"
+                        System.out.println("\nREPLICATION key:" + mensagemRecebida.getPropriedade() + " value:"
                                 + mensagemRecebida.getValor());
                         // Replicação da informação
                         long timestamp = mensagemRecebida.getTimestamp();
@@ -331,12 +341,15 @@ public class Servidor {
                         // mensagemRecebida.getReplicationCount());
                         // EXCLUIR
                         // System.out.println("\nREPLICATION_OK");
+                        // EXCLUIR
+                        System.out.println("Mensagem UUID: " + mensagemRecebida.getUuid());
                         // Quem enviou
                         Socket remetente = clientes.get(mensagemRecebida.getUuid());
                         // 6)
-                        long timestampDoServidor = new Date().getTime() / 1000;
+                        ValorHash chave = tabelaHash.get(mensagemRecebida.getPropriedade());
+                        long timestampHash = chave.getTimestamp();
                         System.out.println("\nEnviando PUT_OK ao Cliente " + remetente.getLocalSocketAddress()
-                                + " da key:" + mensagemRecebida.getPropriedade() + " ts:" + timestampDoServidor);
+                                + " da key:" + mensagemRecebida.getPropriedade() + " ts:" + timestampHash);
                         // Seta o response "PUT_OK" para o remetente
                         mensagemRecebida.setResponse("PUT_OK");
                         // Envia mensagem ao remetente

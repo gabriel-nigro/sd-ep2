@@ -7,6 +7,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Random;
 import java.util.Scanner;
 import java.util.UUID;
 
@@ -51,6 +52,14 @@ public class Teste {
         UUID uuid = UUID.randomUUID();
         clientes.put(uuid, "nada");
         System.out.println("Teste de pegar chave: " +clientes.get("nada"));
+
+
+        // Gera um número entre 0 e 2, para escolher o servidor de forma randômica
+        // Variável para escolher o servidor randomicamente
+        Random rand = new Random();
+        int numeroServidor;
+        numeroServidor = rand.nextInt(2 + 1);
+        System.out.println("Número: " +numeroServidor);
 
        /*Socket socket = new Socket("127.0.0.1", 10097);
         System.out.println("Inet Address: " + socket.getInetAddress());
