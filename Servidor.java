@@ -140,6 +140,8 @@ public class Servidor {
                     // Envia mensagem
                     writer.write(sendMessage);
 
+                    socket.close();
+
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -163,6 +165,7 @@ public class Servidor {
             // Envia mensagem
             writer.write(sendMessage);
 
+            socket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -209,7 +212,7 @@ public class Servidor {
     }
 
     public static void trataRequisicao(Socket cliente, Mensagem mensagemRecebida, String servidor, String[] vizinhos,
-            String lider, TabelaHash tabelaHash, HashMap<UUID, Socket> clientes) {
+            String lider, TabelaHash tabelaHash) {
         (new Thread() {
             @Override
             public void run() {
@@ -224,14 +227,12 @@ public class Servidor {
                         // Mensagem PUT
                         // EXCLUIR
                         // System.out.println("\nMensagem de PUT");
-                        // Identifica qual foi o servidor a receber a mensagem
-                        mensagemRecebida.setServidorReceptorPrimario(servidor);
                         if (servidor.equals(lider)) {
                             // EXCLUIR
                             // System.out.println("\nÉ líder");
 
                             // 6)
-                            System.out.println("\nCliente " + lider + " PUT key:" + mensagemRecebida.getPropriedade()
+                            System.out.println("\nCliente " + mensagemRecebida.getRemetenteInfos() + " PUT key:" + mensagemRecebida.getPropriedade()
                                     + " value:" + mensagemRecebida.getValor());
                             // Associa um unix timestamp ao hash
                             long timestamp = new Date().getTime() / 1000;
@@ -269,8 +270,10 @@ public class Servidor {
                     } else if (mensagemRecebida.isGet()) {
                         // Mensagem GET
 
-                        // Obtém remetente
-                        Socket remetente = clientes.get(mensagemRecebida.getUuid());
+                        // Obtém as informações de IP e PORTA do remetente através da mensagem
+                        String remetenteInfos = mensagemRecebida.getRemetenteInfos();
+                        // Abre um Socket para conexão com o ServerSocket remoto (Remetente)
+                        Socket remetente = new Socket(getIp(remetenteInfos), getPorta(remetenteInfos));
 
                         // Funcionalidade 5.f)
                         ValorHash chave = tabelaHash.get(mensagemRecebida.getPropriedade());
@@ -291,6 +294,8 @@ public class Servidor {
 
                             // Seta o timestamp da chave
                             mensagemRecebida.setTimestamp(timestampHash);
+                            // Seta o Servidor que respondeu
+                            mensagemRecebida.setServidorResposta(servidor);
 
                             if (timestampHash >= timestampCliente) {
                                 // Seta o response
@@ -304,7 +309,7 @@ public class Servidor {
                                 // Encaminha para o cliente
                                 enviaMensagem(remetente, mensagemRecebida);
                             }
-                            System.out.println("\nCliente " + servidor + " GET key:" + mensagemRecebida.getPropriedade()
+                            System.out.println("\nCliente " + mensagemRecebida.getRemetenteInfos() + " GET key:" + mensagemRecebida.getPropriedade()
                                     + " ts:" + mensagemRecebida.getTimestampCliente() + ". Meu ts é "
                                     + mensagemRecebida.getTimestamp() + ", portanto devolvendo "
                                     + mensagemRecebida.getResponse());
@@ -342,16 +347,21 @@ public class Servidor {
                         // EXCLUIR
                         // System.out.println("\nREPLICATION_OK");
                         // EXCLUIR
-                        System.out.println("Mensagem UUID: " + mensagemRecebida.getUuid());
-                        // Quem enviou
-                        Socket remetente = clientes.get(mensagemRecebida.getUuid());
+                        //System.out.println("Mensagem UUID: " + mensagemRecebida.getUuid());
+                        // Obtém as informações de IP e PORTA do remetente através da mensagem
+                        String remetenteInfos = mensagemRecebida.getRemetenteInfos();
+                        // Abre um Socket para conexão com o ServerSocket remoto (Remetente)
+                        Socket remetente = new Socket(getIp(remetenteInfos), getPorta(remetenteInfos));
                         // 6)
                         ValorHash chave = tabelaHash.get(mensagemRecebida.getPropriedade());
                         long timestampHash = chave.getTimestamp();
-                        System.out.println("\nEnviando PUT_OK ao Cliente " + remetente.getLocalSocketAddress()
+                        System.out.println("\nEnviando PUT_OK ao Cliente " + mensagemRecebida.getRemetenteInfos()
                                 + " da key:" + mensagemRecebida.getPropriedade() + " ts:" + timestampHash);
                         // Seta o response "PUT_OK" para o remetente
                         mensagemRecebida.setResponse("PUT_OK");
+                        // Seta o Servidor que respondeu
+                        mensagemRecebida.setServidorResposta(servidor);
+
                         // Envia mensagem ao remetente
                         enviaMensagem(remetente, mensagemRecebida);
                     }
@@ -396,20 +406,21 @@ public class Servidor {
         TabelaHash tabelaHash = new TabelaHash();
 
         // Tabela de hash de clientes
-        HashMap<UUID, Socket> clientes = new HashMap<UUID, Socket>();
+        //HashMap<UUID, Socket> clientes = new HashMap<UUID, Socket>();
 
         while (true) {
             Socket cliente = serverSocket.accept();
 
             // Recebe mensagem
             Mensagem mensagemRecebida = recebeMensagem(cliente);
-            if (mensagemRecebida.isFromClient()) {
+             /*if (mensagemRecebida.isFromClient()) {
                 // Excluir
                 // System.out.println("\nA mensagem recebida é do cliente");
                 clientes.put(mensagemRecebida.getUuid(), cliente);
-            }
+            }*/
 
-            trataRequisicao(cliente, mensagemRecebida, serverInfos, vizinhos, lider, tabelaHash, clientes);
+            //trataRequisicao(cliente, mensagemRecebida, serverInfos, vizinhos, lider, tabelaHash, clientes);
+            trataRequisicao(cliente, mensagemRecebida, serverInfos, vizinhos, lider, tabelaHash);
         }
 
     }

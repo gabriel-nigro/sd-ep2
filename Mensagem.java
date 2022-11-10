@@ -22,11 +22,12 @@ public class Mensagem implements Serializable {
     private String response;
     private int replicationCount = 0;
     private UUID uuid = UUID.randomUUID();
-    private String servidorReceptorPrimario;
+    private String remetenteInfos;
+    private String servidorResposta;
 
-
-    public Mensagem(String propriedade) {
+    public Mensagem(String propriedade, String remetenteInfos) {
         this.propriedade = propriedade;
+        this.remetenteInfos = remetenteInfos;
     }
 
     public String getPropriedade() {
@@ -69,8 +70,12 @@ public class Mensagem implements Serializable {
         return this.response;
     }
 
-    public String getServidorReceptorPrimario() {
-        return this.servidorReceptorPrimario;
+    public String getRemetenteInfos() {
+        return this.remetenteInfos;
+    }
+
+    public String getServidorResposta() {
+        return this.servidorResposta;
     }
 
     public int getReplicationCount() {
@@ -121,8 +126,8 @@ public class Mensagem implements Serializable {
         this.timestampCliente = timestamp;
     }
 
-    public void setServidorReceptorPrimario(String servidor) {
-        this.servidorReceptorPrimario = servidor;
+    public void setServidorResposta(String servidorResposta) {
+        this.servidorResposta = servidorResposta;
     }
 
     public void addReplicationCount() {

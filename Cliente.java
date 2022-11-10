@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.net.ServerSocket;
 import java.net.Socket;
 // Lib para leitura de input do usuário
 import java.util.Scanner;
@@ -154,41 +155,41 @@ public class Cliente {
         return null;
     }
 
-    public static void put(String servidor, Mensagem mensagem) {
-        (new Thread() {
-            @Override
-            public void run() {
-                String ip = getIp(servidor);
-                int porta = getPorta(servidor);
-                try {
-                    // Abre um Socket para conexão com o ServerSocket
-                    Socket socket = new Socket(ip, porta);
+    public static void put(String servidor, Mensagem mensagem, ServerSocket servidorLocal) {
 
-                    // Envia mensagem
-                    enviaMensagem(socket, mensagem);
+        String ip = getIp(servidor);
+        int porta = getPorta(servidor);
+        try {
+            // Abre um Socket para conexão com o ServerSocket remoto
+            Socket socket = new Socket(ip, porta);
 
-                    // Recebe response
-                    Mensagem mensagemResponse = recebeMensagem(socket);
+            // Envia mensagem
+            enviaMensagem(socket, mensagem);
 
-                    System.out.println("RECEBEU ME NSAGEM,:" + mensagemResponse.getResponse());
+            // Abre o Socket remoto no ServerSocket local
+            Socket servidorRemoto = servidorLocal.accept();
 
-                    if (mensagemResponse.getResponse().equals("PUT_OK")) {
-                        System.out.println("\nPUT_OK key:" + mensagemResponse.getPropriedade() + " value:"
-                                + mensagemResponse.getValor() + " timestamp " + mensagemResponse.getTimestamp()
-                                + " realizada no servidor " + servidor);
-                    }
+            // Recebe mensagem via Socket remoto
+            Mensagem mensagemResponse = recebeMensagem(servidorRemoto);
 
-                    // Fecha o Socket
-                    socket.close();
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
+            // Excluir
+            //System.out.println("RECEBEU ME NSAGEM,:" + mensagemResponse.getResponse());
+
+            if (mensagemResponse.getResponse().equals("PUT_OK")) {
+                System.out.println("\nPUT_OK key:" + mensagemResponse.getPropriedade() + " value:"
+                        + mensagemResponse.getValor() + " timestamp " + mensagemResponse.getTimestamp()
+                        + " realizada no servidor " + mensagemResponse.getServidorResposta());
             }
-        }).start();
+
+            // Fecha o Socket
+            socket.close();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
-    public static void get(String servidor, Mensagem mensagem, TabelaHash tabelaHash) {
+    public static void get(String servidor, Mensagem mensagem, TabelaHash tabelaHash, ServerSocket servidorLocal) {
         String ip = getIp(servidor);
         int porta = getPorta(servidor);
         try {
@@ -198,8 +199,11 @@ public class Cliente {
             // Envia mensagem
             enviaMensagem(socket, mensagem);
 
-            // Recebe response
-            Mensagem mensagemResponse = recebeMensagem(socket);
+            // Abre o Socket remoto no ServerSocket local
+            Socket servidorRemoto = servidorLocal.accept();
+
+            // Recebe mensagem via Socket remoto
+            Mensagem mensagemResponse = recebeMensagem(servidorRemoto);
 
             if (mensagemResponse.getResponse() == null) {
                 System.out.println("\nChave não existe no servidor " + servidor);
@@ -244,6 +248,10 @@ public class Cliente {
         // Inicializa a tabela hash
         TabelaHash tabelaHash = new TabelaHash();
 
+        // Declar Servidor local para o Cliente
+        String servidorLocal = null;
+        ServerSocket serverSocketLocal = null;
+
         while (true) {
             System.out.println("\nMenu de acoes.");
             System.out.println("Digite uma opção:");
@@ -265,6 +273,10 @@ public class Cliente {
                         break;
                     }
 
+                    // Porta para criar o ServerSocket
+                    System.out.println("\nInforme o IP:PORTA local.");
+                    servidorLocal = getInputInfos();
+
                     // Servidor vizinho[0]
                     System.out.println("\nInforme o IP:PORTA do primeiro servidor.");
                     servidores[0] = getInputInfos();
@@ -279,7 +291,12 @@ public class Cliente {
 
                     // Seta estado de inicializado como "true"
                     isInitialized = true;
+
+                    // Inicializa servidor
+                    serverSocketLocal = new ServerSocket(getPorta(servidorLocal));
+
                     break;
+
                 }
                 case 2: {
                     // Funcionalidade 4.b)
@@ -301,7 +318,7 @@ public class Cliente {
                     String valor = entrada.nextLine();
 
                     // Cria mensagem
-                    Mensagem mensagem = new Mensagem(propriedade);
+                    Mensagem mensagem = new Mensagem(propriedade, servidorLocal);
                     // Assume o valor da propriedade a ser inserida nos servidores
                     mensagem.setValor(valor);
                     // Identifica que a mensagem é de PUT
@@ -313,10 +330,10 @@ public class Cliente {
                     numeroServidor = rand.nextInt(2 + 1);
 
                     // EXCLUIR
-                    System.out.println("Mensagem UUID: " + mensagem.getUuid());
+                    //System.out.println("Mensagem UUID: " + mensagem.getUuid());
 
                     // Envia o put
-                    put(servidores[numeroServidor], mensagem);
+                    put(servidores[numeroServidor], mensagem, serverSocketLocal);
 
                     break;
                 }
@@ -336,7 +353,7 @@ public class Cliente {
                     String propriedade = entrada.nextLine();
 
                     // Cria mensagem
-                    Mensagem mensagem = new Mensagem(propriedade);
+                    Mensagem mensagem = new Mensagem(propriedade, servidorLocal);
                     // Identifica que a mensagem é de PUT
                     mensagem.setIsGet(isGet);
                     // Identificação que a mensagem vem do cliente
@@ -355,7 +372,7 @@ public class Cliente {
                     numeroServidor = rand.nextInt(2 + 1);
 
                     // Envia o GET
-                    get(servidores[numeroServidor], mensagem, tabelaHash);
+                    get(servidores[numeroServidor], mensagem, tabelaHash, serverSocketLocal);
 
                     break;
                 }
