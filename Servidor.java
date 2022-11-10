@@ -202,6 +202,16 @@ public class Servidor {
         }).start();
     }
 
+    /*
+     * O método é responsável por relizar o envio de mensagens via Socket.
+     * 
+     * Porém, não utiliza-se Threads para atender o comportamento síncrono, necessário
+     * para o REPLICATION do PUT
+     * 
+     * @param socket A conexão socket com o destinatário
+     * @param mensagem A mensagem a ser enviada
+     */
+
     public static void enviaMensagemSincrona(Socket socket, Mensagem mensagem) {
         try {
             // Cria a cadeia de saída (escrita) de informações do socket
@@ -241,6 +251,17 @@ public class Servidor {
         return null;
     }
 
+    /*
+     * O método é responsável por replicar a mensagem de PUT para os demais vizinhos, conforme indicado na
+     * seção 5.c) 2.
+     * 
+     * Assim, para cada vizinho cria-se um socket, necessário para envio da mensagem. Primeiramente, a mensagem
+     * é enviada ao primeiro vizinho. Por tratar-se de um método bloqueante, a segunda replicação só será feita
+     * após a primeira.
+     * 
+     * @param servidor Informação de IP:PORTA de ambos servidores vizinhos
+     * @param Mensagem A mensagem enviada pelo remetente, porém com a propriedade isReplication = true
+     */
     public static void replicaPut(String[] servidor, Mensagem mensagem) {
         try {
             // Encaminha para primeiro servidor
@@ -248,20 +269,25 @@ public class Servidor {
             int porta1 = getPorta(servidor[0]);
             // Abre um Socket para conexão com o ServerSocket
             Socket socket1 = new Socket(ip1, porta1);
+            
+            // Adiciona um ao contador de replicações
             mensagem.addReplicationCount();
-            // EXCLUIR
-            // System.out.println("Enviou mensagem pro 1");
+
+            // Envia mensagem para o primeiro vizinho, de maneira síncrona
             enviaMensagemSincrona(socket1, mensagem);
+
+            // OBS: Código só chegará aqui após envio da mensagem, pelo mesmo ser um método bloqueante
 
             // Obtém ip e porta
             String ip2 = getIp(servidor[1]);
             int porta2 = getPorta(servidor[1]);
             // Abre um Socket para conexão com o ServerSocket
             Socket socket2 = new Socket(ip2, porta2);
-            // Envia para o primeiro vizinho
+            
+            // Adiciona um ao contador de replicações
             mensagem.addReplicationCount();
-            // EXCLUIR
-            // System.out.println("Enviou mensagem pro 2");
+
+            // Envia mensagem para o segundo vizinho, de maneira síncrona
             enviaMensagemSincrona(socket2, mensagem);
 
         } catch (IOException e) {
@@ -269,50 +295,59 @@ public class Servidor {
         }
     }
 
-    public static void trataRequisicao(Socket cliente, Mensagem mensagemRecebida, String servidor, String[] vizinhos,
+    /*
+     * O método é responsável por replicar a mensagem de PUT para os demais vizinhos, conforme indicado na
+     * seção 5.c) 2.
+     * 
+     * Assim, para cada vizinho cria-se um socket, necessário para envio da mensagem. Primeiramente, a mensagem
+     * é enviada ao primeiro vizinho. Por tratar-se de um método bloqueante, a segunda replicação só será feita
+     * após a primeira.
+     * 
+     * @param mensagemRecebida A mensagem enviada pelo cliente
+     * @param servidor As informações de IP:PORTA do servidor local
+     * @param vizinhos As informações de IP:PORTA dos vizinhos
+     * @param lider As informações de IP:PORTA do líder
+     * @param tabelaHash A instância responsável por guardar os pares chave-valor do servidor
+     */
+    public static void trataRequisicao(Mensagem mensagemRecebida, String servidor, String[] vizinhos,
             String lider, TabelaHash tabelaHash) {
         (new Thread() {
             @Override
             public void run() {
                 try {
-                    // EXCLUIR
-                    // System.out.println("\nRecebeu mensagem");
+                    // Obtém informações de chave e valor da mensagem.
                     String propriedade = mensagemRecebida.getPropriedade();
                     String valor = mensagemRecebida.getValor();
 
                     // Funcionalidade 5.c)
                     if (mensagemRecebida.isPut()) {
                         // Mensagem PUT
-                        // EXCLUIR
-                        // System.out.println("\nMensagem de PUT");
                         if (servidor.equals(lider)) {
-                            // EXCLUIR
-                            // System.out.println("\nÉ líder");
 
                             // 6)
                             System.out.println("\nCliente " + mensagemRecebida.getRemetenteInfos() + " PUT key:" + mensagemRecebida.getPropriedade()
                                     + " value:" + mensagemRecebida.getValor());
-                            // Associa um unix timestamp ao hash
+                            
+                            // Associa um unix timestamp a mensagem
                             long timestamp = new Date().getTime() / 1000;
                             mensagemRecebida.setTimestamp(timestamp);
 
                             // Caso não haja a propriedade, a mesma será adicionada.
                             // Caso esteja presente, será atualizada.
+                            // Funcionalidade 5.c) 1.
                             tabelaHash.put(propriedade, valor, timestamp);
 
-                            // Como a mensagem será replicada, isReplication é setado para "true" e isPut
-                            // para "false"
+                            // Como a mensagem será replicada, isReplication é setado para "true" e isPut para "false"
                             mensagemRecebida.setIsReplication(true);
                             mensagemRecebida.setIsPut(false);
-                            // Como a mensagem será repassada aos servidores, isFromClient é setado para
-                            // "false"
+                            // Como a mensagem será repassada aos servidores, isFromClient é setado para "false"
                             mensagemRecebida.setIsFromClient(false);
 
                             // Replica o PUT para os outros servidores
-                            // EXCLUIR
-                            // System.out.println("\nEnviou o replication PUT para todos os servidores");
+                            // Funcionalidade 5.c) 2.
                             replicaPut(vizinhos, mensagemRecebida);
                         } else {
+                            // Funcionalidade 5.c)
                             // Cria Socket com o Líder
                             String ipLider = getIp(lider);
                             int portaLider = getPorta(lider);
@@ -327,25 +362,25 @@ public class Servidor {
                         }
                     } else if (mensagemRecebida.isGet()) {
                         // Mensagem GET
+                        // Funcionalidade 5.f)
 
                         // Obtém as informações de IP e PORTA do remetente através da mensagem
                         String remetenteInfos = mensagemRecebida.getRemetenteInfos();
+
                         // Abre um Socket para conexão com o ServerSocket remoto (Remetente)
                         Socket remetente = new Socket(getIp(remetenteInfos), getPorta(remetenteInfos));
 
-                        // Funcionalidade 5.f)
+                        // Obtém o valor da chave salva na tabela de hash local
                         ValorHash chave = tabelaHash.get(mensagemRecebida.getPropriedade());
                         if (chave == null) {
-                            // EXCLUIR
-                            //System.out.println("Chave não existe, retorna null");
+                            // Caso a chave não exista, retorna "null" para o cliente
                             // Seta o response
                             mensagemRecebida.setResponse(null);
                             // Encaminha para o cliente
                             enviaMensagem(remetente, mensagemRecebida);
 
                         } else {
-                            // Chave existe, logo verifica se o cliente possui a chave mais atualizada do
-                            // que o servidor
+                            // Chave existe, logo verifica-se se o cliente possui a chave mais atualizada do que o servidor
 
                             long timestampHash = chave.getTimestamp();
                             long timestampCliente = mensagemRecebida.getTimestampCliente();
@@ -373,21 +408,21 @@ public class Servidor {
                                     + mensagemRecebida.getResponse());
                         }
                     } else if (mensagemRecebida.isReplication()) {
-                        // EXCLUIR
-                        // System.out.println("\nRecebeu REPLICATION");
+                        // Mensagem de REPLICATION
+                        // Funcionalidade 5.d)
 
                         // 6)
                         System.out.println("\nREPLICATION key:" + mensagemRecebida.getPropriedade() + " value:"
                                 + mensagemRecebida.getValor());
+                       
                         // Replicação da informação
                         long timestamp = mensagemRecebida.getTimestamp();
                         tabelaHash.put(propriedade, valor, timestamp);
 
-                        // Servidor 1
-                        // Obtém ip e porta
+                        // Obtém ip e porta do líder
                         String ipLider = getIp(lider);
                         int portaLider = getPorta(lider);
-                        // Abre um Socket para conexão com o ServerSocket
+                        // Abre um Socket para conexão com o ServerSocket do líder
                         Socket socketLider = new Socket(ipLider, portaLider);
 
                         // Seta REPLICATION_OK
@@ -396,25 +431,24 @@ public class Servidor {
 
                         // Devolve com REPLICATION_OK para líder
                         enviaMensagem(socketLider, mensagemRecebida);
-                        // EXCLUIR
-                        // System.out.println("\nEnviou REPLICATION_OK");
                     } else if (mensagemRecebida.isReplicationOk() && mensagemRecebida.getReplicationCount() == 2) {
-                        // EXCLUIR
-                        // System.out.println("\nReplication count: " +
-                        // mensagemRecebida.getReplicationCount());
-                        // EXCLUIR
-                        // System.out.println("\nREPLICATION_OK");
-                        // EXCLUIR
-                        //System.out.println("Mensagem UUID: " + mensagemRecebida.getUuid());
+                        // Quando o líder recebe todos os REPLICATIONS
+                        // Funcionalidade 5.e)
+
                         // Obtém as informações de IP e PORTA do remetente através da mensagem
                         String remetenteInfos = mensagemRecebida.getRemetenteInfos();
+                        
                         // Abre um Socket para conexão com o ServerSocket remoto (Remetente)
                         Socket remetente = new Socket(getIp(remetenteInfos), getPorta(remetenteInfos));
-                        // 6)
+                        
+                        // Obtém os valores da tabela de hash local
                         ValorHash chave = tabelaHash.get(mensagemRecebida.getPropriedade());
                         long timestampHash = chave.getTimestamp();
+                        
+                        // 6)
                         System.out.println("\nEnviando PUT_OK ao Cliente " + mensagemRecebida.getRemetenteInfos()
                                 + " da key:" + mensagemRecebida.getPropriedade() + " ts:" + timestampHash);
+                        
                         // Seta o response "PUT_OK" para o remetente
                         mensagemRecebida.setResponse("PUT_OK");
                         // Seta o Servidor que respondeu
@@ -423,13 +457,10 @@ public class Servidor {
                         // Envia mensagem ao remetente
                         enviaMensagem(remetente, mensagemRecebida);
                     }
-
                 } catch (Exception e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
             }
-
         }).start();
     }
 
@@ -463,23 +494,14 @@ public class Servidor {
         // Inicializa a tabela hash
         TabelaHash tabelaHash = new TabelaHash();
 
-        // Tabela de hash de clientes
-        //HashMap<UUID, Socket> clientes = new HashMap<UUID, Socket>();
-
         while (true) {
             Socket cliente = serverSocket.accept();
 
             // Recebe mensagem
             Mensagem mensagemRecebida = recebeMensagem(cliente);
-             /*if (mensagemRecebida.isFromClient()) {
-                // Excluir
-                // System.out.println("\nA mensagem recebida é do cliente");
-                clientes.put(mensagemRecebida.getUuid(), cliente);
-            }*/
 
-            //trataRequisicao(cliente, mensagemRecebida, serverInfos, vizinhos, lider, tabelaHash, clientes);
-            trataRequisicao(cliente, mensagemRecebida, serverInfos, vizinhos, lider, tabelaHash);
+            // Trata as requisições enviadas pelo cliente, sejam elas PUT ou GET
+            trataRequisicao(mensagemRecebida, serverInfos, vizinhos, lider, tabelaHash);
         }
-
     }
 }
