@@ -1,13 +1,10 @@
 
 // Lib para leitura de input do usuário
 import java.util.Scanner;
-import java.util.UUID;
 // Libs para socket
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.ObjectInputStream;
@@ -18,49 +15,94 @@ import java.util.HashMap;
 import java.util.regex.Pattern;
 // Lib para exceptions
 import java.io.IOException;
-import java.util.ArrayList;
 // Lib para utilização de Data
 import java.util.Date;
 
 public class Servidor {
 
-    // Classe para utilizar dois valores no HashMap
+    /*
+     * A classe ValorHash foi criada com o intuito de armazenar duas propriedades em uma
+     * chave do HashMap, sendo elas o "valor" e o "timestamp".
+     */
     static public class ValorHash {
         private String valor;
         private long timestamp;
 
+        /*
+         * O construtor inicializa a instância recebendo as propriedades de valor e timestamp.
+         * 
+         * @param valor
+         * @param timestamp
+         */
         public ValorHash(String valor, long timestamp) {
             this.valor = valor;
             this.timestamp = timestamp;
         }
 
+        /*
+         * Obtém o valor da propriedade valor.
+         * @return String valor
+         */
         public String getValor() {
             return this.valor;
         }
 
+        /*
+         * Obtém o valor do timestamp.
+         * @return long timestamp
+         */
         public long getTimestamp() {
             return this.timestamp;
         }
     }
 
-    // Classe para armazenar os valores de Hash
+    /* 
+     * A classe TabelaHash foi criada com o intuito de armazenar pares chave-valor.
+     * Nela é instanciado um HashMap, tendo como chave uma String, e o valor uma instância
+     * da classe ValorHash, o qual por sua vez possui uma String valor e um Timestamp
+     * 
+     * Para visualizarmos uma instância da classe, abaixo há sua representação na notação JSON:
+     * {
+     *   chave: ${propriedade},
+     *   valorHash: {
+     *      valor: ${valor},
+     *      timestamp: ${ts}
+     *   }
+     * }
+     */
     static public class TabelaHash {
 
         // Inicializa a tabela hash
         HashMap<String, ValorHash> tabelaHash = new HashMap<String, ValorHash>();
 
+        // Construtor vazio
         public TabelaHash() {
         };
 
+        /*
+         * O método get() da classe realiza a chamada do método get() da instância HashMap
+         * 
+         * @param propriedade Chave do HashMap
+         * 
+         * @return ValorHash a instância do ValorHash atrelada a chave informada no parâmetro
+         */
         public ValorHash get(String propriedade) {
             return this.tabelaHash.get(propriedade);
         }
 
+        /*
+         * O método put() da classe realiza a chamada do método put() da instância HashMap
+         * 
+         * @param propriedade
+         * @param valor
+         * @param timestamp
+         */
         public void put(String propriedade, String valor, long timestamp) {
             this.tabelaHash.put(propriedade, new ValorHash(valor, timestamp));
         }
     }
 
+    // Declara o Scanner para obter o input do usuário.
     private static Scanner entrada;
 
     /*
@@ -109,7 +151,10 @@ public class Servidor {
     }
 
     /*
+     * O método é responsável por receber o valor de entrada do usuário e validá-lo.
+     * Como há um laço, a função só retornará após receber um valor válido.
      * 
+     * @return String O valor do input validado.
      */
     static String getInputInfos() {
         String inputInfos = null;
@@ -122,6 +167,14 @@ public class Servidor {
         return inputInfos;
     }
 
+    /*
+     * O método é responsável por relizar o envio de mensagens via Socket.
+     * 
+     * Para tal, é utilizado o uso de Thread.
+     * 
+     * @param socket A conexão socket com o destinatário
+     * @param mensagem A mensagem a ser enviada
+     */
     public static void enviaMensagem(Socket socket, Mensagem mensagem) {
         (new Thread() {
             @Override
@@ -140,13 +193,12 @@ public class Servidor {
                     // Envia mensagem
                     writer.write(sendMessage);
 
+                    // Fecha o socket
                     socket.close();
-
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
-
         }).start();
     }
 
@@ -171,6 +223,12 @@ public class Servidor {
         }
     }
 
+    /*
+     * O método é responsável por receber a mensagem enviada ao seu ServerSocket local.
+     * 
+     * @param socket A conexão socket com o remetente
+     * @return Mensagem A mensagem enviada pelo remetente
+     */
     public static Mensagem recebeMensagem(Socket socket) {
         try {
             // Transforma o pacote em uma instância da classe Mensagem.

@@ -20,40 +20,99 @@ import java.util.HashMap;
 
 public class Cliente {
 
+    // Declara o Scanner para obter o input do usuário.
     private static Scanner entrada;
 
-    // Classe para utilizar dois valores no HashMap
+    /*
+     * A classe ValorHash foi criada com o intuito de armazenar duas propriedades em
+     * uma
+     * chave do HashMap, sendo elas o "valor" e o "timestamp".
+     */
     static public class ValorHash {
         private String valor;
         private long timestamp;
 
+        /*
+         * O construtor inicializa a instância recebendo as propriedades de valor e
+         * timestamp.
+         * 
+         * @param valor
+         * 
+         * @param timestamp
+         */
         public ValorHash(String valor, long timestamp) {
             this.valor = valor;
             this.timestamp = timestamp;
         }
 
+        /*
+         * Obtém o valor da propriedade valor.
+         * 
+         * @return String valor
+         */
         public String getValor() {
             return this.valor;
         }
 
+        /*
+         * Obtém o valor do timestamp.
+         * 
+         * @return long timestamp
+         */
         public long getTimestamp() {
             return this.timestamp;
         }
     }
 
-    // Classe para armazenar os valores de Hash
+    /*
+     * A classe TabelaHash foi criada com o intuito de armazenar pares chave-valor.
+     * Nela é instanciado um HashMap, tendo como chave uma String, e o valor uma
+     * instância
+     * da classe ValorHash, o qual por sua vez possui uma String valor e um
+     * Timestamp
+     * 
+     * Para visualizarmos uma instância da classe, abaixo há sua representação na
+     * notação JSON:
+     * {
+     * chave: ${propriedade},
+     * valorHash: {
+     * valor: ${valor},
+     * timestamp: ${ts}
+     * }
+     * }
+     */
     static public class TabelaHash {
 
         // Inicializa a tabela hash
         HashMap<String, ValorHash> tabelaHash = new HashMap<String, ValorHash>();
 
+        // Construtor vazio
         public TabelaHash() {
         };
 
+        /*
+         * O método get() da classe realiza a chamada do método get() da instância
+         * HashMap
+         * 
+         * @param propriedade Chave do HashMap
+         * 
+         * @return ValorHash a instância do ValorHash atrelada a chave informada no
+         * parâmetro
+         */
         public ValorHash get(String propriedade) {
             return this.tabelaHash.get(propriedade);
         }
 
+        /*
+         * O método put() da classe realiza a chamada do método put() da instância
+         * HashMap
+         * 
+         * @param propriedade
+         * 
+         * @param valor
+         * 
+         * @param timestamp
+         */
         public void put(String propriedade, String valor, long timestamp) {
             this.tabelaHash.put(propriedade, new ValorHash(valor, timestamp));
         }
@@ -105,7 +164,10 @@ public class Cliente {
     }
 
     /*
+     * O método é responsável por receber o valor de entrada do usuário e validá-lo.
+     * Como há um laço, a função só retornará após receber um valor válido.
      * 
+     * @return String O valor do input validado.
      */
     static String getInputInfos() {
         String inputInfos = null;
@@ -118,6 +180,15 @@ public class Cliente {
         return inputInfos;
     }
 
+    /*
+     * O método é responsável por relizar o envio de mensagens via Socket.
+     * 
+     * Para tal, é utilizado o uso de Thread.
+     * 
+     * @param socket A conexão socket com o destinatário
+     * 
+     * @param mensagem A mensagem a ser enviada
+     */
     public static void enviaMensagem(Socket socket, Mensagem mensagem) {
         (new Thread() {
             @Override
@@ -139,10 +210,17 @@ public class Cliente {
                     e.printStackTrace();
                 }
             }
-
         }).start();
     }
 
+    /*
+     * O método é responsável por receber a mensagem enviada ao seu ServerSocket
+     * local.
+     * 
+     * @param socket A conexão socket com o remetente
+     * 
+     * @return Mensagem A mensagem enviada pelo remetente
+     */
     public static Mensagem recebeMensagem(Socket socket) {
         try {
             // Transforma o pacote em uma instância da classe Mensagem.
@@ -155,11 +233,34 @@ public class Cliente {
         return null;
     }
 
+    /*
+     * O método é responsável por lidar com o fluxo de requisições PUT.
+     * 
+     * Dessa forma, cria-se o Socket com o destinatário e envia-lhe a mensagem com
+     * os dados
+     * necessários para o PUT. Após isso, é utilizada a função ".accept()" do
+     * servidor local
+     * para receber a mensagem de resposta da requisição.
+     * 
+     * Com a mensagem em mãos, verifica-se se o response é de PUT_OK, printando as
+     * informações
+     * indicadas na seção 6) do EP.
+     * 
+     * Funcionalidade 4.b)
+     * 
+     * @param servidor As informações de IP:PORTA do servidor destinatário.
+     * 
+     * @param mensagem A mensagem a ser enviada.
+     * 
+     * @param servidorLocal A instância do ServerSocket local
+     * 
+     */
     public static void put(String servidor, Mensagem mensagem, ServerSocket servidorLocal) {
-
-        String ip = getIp(servidor);
-        int porta = getPorta(servidor);
         try {
+            // Obtém informações de IP e PORTA do destinatário
+            String ip = getIp(servidor);
+            int porta = getPorta(servidor);
+
             // Abre um Socket para conexão com o ServerSocket remoto
             Socket socket = new Socket(ip, porta);
 
@@ -172,23 +273,47 @@ public class Cliente {
             // Recebe mensagem via Socket remoto
             Mensagem mensagemResponse = recebeMensagem(servidorRemoto);
 
-            // Excluir
-            //System.out.println("RECEBEU ME NSAGEM,:" + mensagemResponse.getResponse());
-
+            // Verifica se o response é igual a PUT_OK
             if (mensagemResponse.getResponse().equals("PUT_OK")) {
+                // 6)
                 System.out.println("\nPUT_OK key:" + mensagemResponse.getPropriedade() + " value:"
                         + mensagemResponse.getValor() + " timestamp " + mensagemResponse.getTimestamp()
                         + " realizada no servidor " + mensagemResponse.getServidorResposta());
             }
 
-            // Fecha o Socket
+            // Fecha o socket
             socket.close();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
 
+    /*
+     * O método é responsável por lidar com o fluxo de requisições GET.
+     * 
+     * Dessa forma, cria-se o Socket com o destinatário e envia-lhe a mensagem com
+     * os dados
+     * necessários para o GET. Após isso, é utilizada a função ".accept()" do
+     * servidor local
+     * para receber a mensagem de resposta da requisição.
+     * 
+     * Com a mensagem em mãos, verifica-se se o response, o qual pode ser:
+     * - null: Caso a chave não exista no servidor.
+     * - TRY_OTHER_SERVER_OR_LATER: Caso o servidor ainda não tenha atualizado o
+     * valor da chave.
+     * - Valor da chave: Caso o valor da chave no servidor esteja mais atualizado
+     * que o cliente.
+     * Assim, são printadas as informações conforme indicadas na seção 6) do EP.
+     * 
+     * Funcionalidade 4.c)
+     * 
+     * @param servidor As informações de IP:PORTA do servidor destinatário.
+     * 
+     * @param mensagem A mensagem a ser enviada.
+     * 
+     * @param servidorLocal A instância do ServerSocket local
+     * 
+     */
     public static void get(String servidor, Mensagem mensagem, TabelaHash tabelaHash, ServerSocket servidorLocal) {
         String ip = getIp(servidor);
         int porta = getPorta(servidor);
@@ -205,6 +330,7 @@ public class Cliente {
             // Recebe mensagem via Socket remoto
             Mensagem mensagemResponse = recebeMensagem(servidorRemoto);
 
+            // Verifica o response
             if (mensagemResponse.getResponse() == null) {
                 System.out.println("\nChave não existe no servidor " + servidor);
             } else if (mensagemResponse.getResponse().equals("TRY_OTHER_SERVER_OR_LATER")) {
@@ -261,6 +387,8 @@ public class Cliente {
                 System.out.println("1 - INIT");
             System.out.println("2 - PUT");
             System.out.println("3 - GET");
+
+            // Obtém código de ação informado pelo usuário
             acao = Integer.parseInt(entrada.nextLine());
 
             switch (acao) {
@@ -329,9 +457,6 @@ public class Cliente {
                     // Gera um número entre 0 e 2, para escolher o servidor de forma randômica
                     numeroServidor = rand.nextInt(2 + 1);
 
-                    // EXCLUIR
-                    //System.out.println("Mensagem UUID: " + mensagem.getUuid());
-
                     // Envia o put
                     put(servidores[numeroServidor], mensagem, serverSocketLocal);
 
@@ -377,6 +502,7 @@ public class Cliente {
                     break;
                 }
                 default:
+                    // Caso o usuário informe o código incorreto no Menu de Ações.
                     System.out.println("Ação incorreta. Informe uma ação válida.");
                     break;
             }
