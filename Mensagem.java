@@ -1,10 +1,5 @@
 // Lib para serializar os objetos enviados e recebidos via socket
 import java.io.Serializable;
-import java.net.Socket;
-// Lib para utilização de Data
-import java.util.Date;
-// Lib para criar a tabela de Hash
-import java.util.HashMap;
 import java.util.UUID; 
 
 public class Mensagem implements Serializable {
