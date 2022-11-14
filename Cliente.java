@@ -1,8 +1,6 @@
-import java.io.BufferedReader;
+// Libs para socket
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
@@ -14,9 +12,10 @@ import java.util.Scanner;
 import java.util.regex.Pattern;
 // Lib para escolher randômicamente
 import java.util.Random;
-import java.util.Date;
 // Lib para criar a tabela de Hash
 import java.util.HashMap;
+// Lib de exceção
+import java.io.IOException;
 
 public class Cliente {
 

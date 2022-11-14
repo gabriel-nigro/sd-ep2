@@ -296,12 +296,7 @@ public class Servidor {
     }
 
     /*
-     * O método é responsável por replicar a mensagem de PUT para os demais vizinhos, conforme indicado na
-     * seção 5.c) 2.
-     * 
-     * Assim, para cada vizinho cria-se um socket, necessário para envio da mensagem. Primeiramente, a mensagem
-     * é enviada ao primeiro vizinho. Por tratar-se de um método bloqueante, a segunda replicação só será feita
-     * após a primeira.
+     * O método é responsável por tratar as requisições enviadas ao servidor, sejam elas PUT ou GET.
      * 
      * @param mensagemRecebida A mensagem enviada pelo cliente
      * @param servidor As informações de IP:PORTA do servidor local
@@ -431,6 +426,9 @@ public class Servidor {
 
                         // Devolve com REPLICATION_OK para líder
                         enviaMensagem(socketLider, mensagemRecebida);
+
+                        //Thread.sleep(30000);
+                        //tabelaHash.put(propriedade, valor, timestamp);
                     } else if (mensagemRecebida.isReplicationOk() && mensagemRecebida.getReplicationCount() == 2) {
                         // Quando o líder recebe todos os REPLICATIONS
                         // Funcionalidade 5.e)
